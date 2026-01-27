@@ -1,0 +1,78 @@
+:root {
+  /* Purple Colors */
+  --color-primary: oklch(0.55 0.25 290);
+  --color-primary-light: oklch(0.97 0.01 290);
+  --color-accent: oklch(0.95 0.02 290);
+  
+  /* White/Background Colors */
+  --color-background: oklch(0.99 0 0);
+  --color-card: oklch(1 0 0);
+  --color-sidebar: oklch(0.98 0.01 290);
+  
+  /* Text */
+  --color-text: oklch(0 0 0); /* Pure black */
+  --color-text-secondary: oklch(0.3 0 0); /* Dark gray */
+}
+
+/* Apply OKLCH colors to Mintlify elements */
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+/* Primary purple for links and buttons */
+a {
+  color: var(--color-primary);
+}
+
+a:hover {
+  color: oklch(0.50 0.25 290); /* Slightly darker on hover */
+}
+
+/* Buttons */
+button[class*="primary"],
+.primary-button {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+button[class*="primary"]:hover,
+.primary-button:hover {
+  background-color: oklch(0.50 0.25 290);
+}
+
+/* Cards and popovers */
+[class*="card"],
+[class*="popover"] {
+  background-color: var(--color-card);
+}
+
+/* Sidebar */
+[class*="sidebar"],
+nav {
+  background-color: var(--color-sidebar);
+}
+
+/* Secondary elements */
+[class*="secondary"] {
+  background-color: var(--color-primary-light);
+}
+
+/* Accent backgrounds */
+[class*="accent"],
+[class*="highlight"] {
+  background-color: var(--color-accent);
+}
+
+/* Code blocks - keep readable with slight purple tint */
+pre,
+code {
+  background-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+/* Ensure black text throughout */
+h1, h2, h3, h4, h5, h6,
+p, span, div {
+  color: var(--color-text);
+}
