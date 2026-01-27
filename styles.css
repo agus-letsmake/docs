@@ -85,36 +85,56 @@ p, span, div {
   color: var(--color-text);
 }
 
-/* Navigation - only highlight selected item, not sections */
-/* Remove section title highlighting */
-[class*="group"]:has([aria-current="page"]) > [class*="group-title"],
-[class*="nav-group"]:has([aria-current="page"]) > h3,
-[class*="nav-group"]:has([aria-current="page"]) > [class*="title"] {
-  background-color: transparent !important;
-  font-weight: normal !important;
-}
+/* Navigation - REMOVE ALL HIGHLIGHTING except selected item */
 
-/* Only highlight the active/selected navigation item */
-[aria-current="page"],
-.active-page,
-[class*="active"][class*="nav-item"] {
-  background-color: var(--color-accent) !important;
-  border-left: 3px solid var(--color-primary);
-  font-weight: 500;
-}
-
-/* Remove background from non-selected items */
-[class*="nav-item"]:not([aria-current="page"]) {
+/* Remove ALL backgrounds from navigation by default */
+nav *,
+[class*="sidebar"] *,
+[class*="navigation"] *,
+[class*="nav-"] * {
   background-color: transparent !important;
 }
 
-/* Ensure section titles are never highlighted */
-[class*="nav-group"] > h3,
-[class*="nav-group"] > [class*="title"],
-.group-title {
+/* Remove section title highlighting completely */
+[class*="group"],
+[class*="nav-group"],
+.group-title,
+[class*="group-title"],
+nav h3,
+nav h2,
+nav h4,
+[data-group],
+[class*="NavigationGroup"] {
   background-color: transparent !important;
   color: var(--color-text) !important;
   font-weight: 600 !important;
+}
+
+/* Remove background from ALL navigation items */
+[class*="nav-item"],
+[class*="NavigationItem"],
+nav a,
+nav button,
+[class*="sidebar"] a,
+[class*="sidebar"] button {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* ONLY highlight the currently selected/active navigation item */
+nav a[aria-current="page"],
+[aria-current="page"],
+.active-page,
+[data-active="true"] {
+  background-color: var(--color-accent) !important;
+  border-left: 3px solid var(--color-primary) !important;
+  font-weight: 500 !important;
+}
+
+/* Ensure hover doesn't add backgrounds */
+nav a:hover:not([aria-current="page"]),
+[class*="nav-item"]:hover:not([aria-current="page"]) {
+  background-color: transparent !important;
 }
 
 /* Remove bubble/highlight from selected tab */

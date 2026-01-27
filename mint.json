@@ -3,9 +3,9 @@
   "name": "TestLab API Documentation",
   "logo": {
     "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "light": "/makelogo.png"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.ico",
   "colors": {
     "primary": "#8b5cf6",
     "light": "#f5f3ff",
@@ -18,15 +18,9 @@
   "css": [
     "/styles.css"
   ],
-  "topbarLinks": [
-    {
-      "name": "Support",
-      "url": "mailto:support@letsmake.com"
-    }
-  ],
   "topbarCtaButton": {
     "name": "Dashboard",
-    "url": "https://testlab.letsmake.com"
+    "url": "https://poc-test-management.vercel.app"
   },
   "tabs": [
     {
@@ -116,9 +110,6 @@
       ]
     }
   ],
-  "footerSocials": {
-    "github": "https://github.com/letsmake/testlab"
-  },
   "api": {
     "baseUrl": "https://testlab.letsmake.com",
     "auth": {
