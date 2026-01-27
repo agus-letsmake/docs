@@ -2,7 +2,8 @@
   /* Purple Colors */
   --color-primary: oklch(0.55 0.25 290);
   --color-primary-light: oklch(0.97 0.01 290);
-  --color-accent: oklch(0.95 0.02 290);
+  --color-accent: oklch(0.90 0.08 290); /* More visible purple tint */
+  --color-purple-highlight: oklch(0.92 0.06 290);
   
   /* White/Background Colors */
   --color-background: oklch(0.99 0 0);
@@ -109,32 +110,21 @@ nav a:not([aria-current="page"]),
 }
 
 /* Highlight selected sidebar section in purple */
-[class*="sidebar"] a[aria-current="page"],
-nav a[aria-current="page"],
-[data-active="true"] {
-  background-color: var(--color-accent) !important;
+[aria-current="page"],
+a[aria-current="page"],
+[data-active="true"],
+.active {
+  background-color: var(--color-purple-highlight) !important;
   color: var(--color-primary) !important;
   font-weight: 600 !important;
   border-left: 3px solid var(--color-primary) !important;
-  padding-left: 12px !important;
+  border-radius: 4px !important;
 }
 
 /* Ensure hover doesn't add backgrounds to non-active items */
 nav a:hover:not([aria-current="page"]),
 [class*="nav-item"]:hover:not([aria-current="page"]) {
   background-color: transparent !important;
-}
-
-/* Ensure dashboard button is fully visible */
-[class*="topbar"] button,
-[class*="cta"] button,
-header button,
-a[href*="dashboard"],
-[class*="topbarCta"] {
-  z-index: 100 !important;
-  position: relative !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
 /* Remove bubble/highlight from selected tab */
@@ -153,15 +143,27 @@ button[role="tab"][aria-selected="true"] {
   display: none !important;
 }
 
-/* Make logo bigger */
+/* Logo size */
 img[alt*="logo"],
-[class*="logo"] img,
-header img,
-nav img[src*="makelogo"] {
+[class*="logo"] img {
   height: auto !important;
   max-height: 57px !important;
   width: auto !important;
   min-width: 142px !important;
   object-fit: contain !important;
-  margin-left: 0 !important;
+}
+
+/* Dashboard button - ensure it's visible and styled */
+a[href*="vercel"],
+a[href*="dashboard"],
+[class*="TopbarCta"],
+[class*="topbar-cta"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
 }
