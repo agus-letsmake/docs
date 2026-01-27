@@ -1,0 +1,28 @@
+---
+title: "Get Test Suite"
+api: "GET /api/test-suites/{id}"
+description: "Retrieve detailed information about a specific test suite"
+---
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test suite
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/test-suites/suite123 \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "suite123",
+  "name": "Authentication Test Suite",
+  "description": "Tests for user authentication",
+  "testCaseIds": ["tc001", "tc002", "tc003"],
+  "createdAt": "2024-01-20T10:00:00Z"
+}
+```
+</ResponseExample>

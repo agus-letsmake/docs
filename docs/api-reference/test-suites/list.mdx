@@ -1,0 +1,34 @@
+---
+title: "List Test Suites"
+api: "GET /api/test-suites"
+description: "Retrieve a list of all test suites"
+---
+
+Get all test suites with their associated test case IDs.
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/test-suites \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": "suite123",
+    "name": "Authentication Test Suite",
+    "description": "Tests for user authentication features",
+    "testCaseIds": ["tc001", "tc002", "tc003"],
+    "createdBy": {
+      "id": "user123",
+      "name": "John Doe",
+      "email": "john@letsmake.com"
+    },
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-20T14:30:00Z"
+  }
+]
+```
+</ResponseExample>

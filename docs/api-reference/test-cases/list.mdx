@@ -1,0 +1,165 @@
+---
+title: "List Test Cases"
+api: "GET /api/test-cases"
+description: "Retrieve a list of all test cases in the system"
+---
+
+## Overview
+
+This endpoint returns all test cases with their complete details including steps, labels, and creator information.
+
+## Authentication
+
+This endpoint requires authentication via API key or Bearer token.
+
+<ParamField header="X-API-Key" type="string">
+  Your API key for authentication
+</ParamField>
+
+<ParamField header="Authorization" type="string">
+  Bearer token (Firebase ID token)
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the test case
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Test case title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Detailed description of the test case
+</ResponseField>
+
+<ResponseField name="preconditions" type="string">
+  Prerequisites that must be met before executing the test
+</ResponseField>
+
+<ResponseField name="epicOrFeature" type="string">
+  The epic or feature this test case belongs to
+</ResponseField>
+
+<ResponseField name="steps" type="array">
+  Array of test steps
+  <Expandable title="Step properties">
+    <ResponseField name="id" type="string">
+      Unique identifier for the step
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Description of the action to perform
+    </ResponseField>
+    <ResponseField name="expectedResult" type="string">
+      Expected outcome of the step
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="labels" type="array">
+  Array of label strings for categorization
+</ResponseField>
+
+<ResponseField name="automationStatus" type="string">
+  Automation status of the test case. One of: `not_automated`, `automated`, `will_not_automate`
+</ResponseField>
+
+<ResponseField name="createdBy" type="object">
+  Information about the user who created this test case
+  <Expandable title="User properties">
+    <ResponseField name="id" type="string">
+      User ID
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      User name
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      User email
+    </ResponseField>
+    <ResponseField name="image" type="string">
+      Profile picture URL
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the test case was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp of when the test case was last updated
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/test-cases \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+
+```javascript JavaScript
+const response = await fetch('https://testlab.letsmake.com/api/test-cases', {
+  method: 'GET',
+  headers: {
+    'X-API-Key': 'tlk_your_api_key_here'
+  }
+});
+
+const testCases = await response.json();
+console.log(testCases);
+```
+
+```python Python
+import requests
+
+url = "https://testlab.letsmake.com/api/test-cases"
+headers = {
+    "X-API-Key": "tlk_your_api_key_here"
+}
+
+response = requests.get(url, headers=headers)
+test_cases = response.json()
+print(test_cases)
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+[
+  {
+    "id": "clx123abc",
+    "title": "User can login with valid credentials",
+    "description": "Verify that users can successfully log in with correct username and password",
+    "preconditions": "User account exists in the system",
+    "epicOrFeature": "Authentication",
+    "steps": [
+      {
+        "id": "step1",
+        "description": "Navigate to login page",
+        "expectedResult": "Login form is displayed"
+      },
+      {
+        "id": "step2",
+        "description": "Enter valid username and password",
+        "expectedResult": "Credentials are accepted"
+      },
+      {
+        "id": "step3",
+        "description": "Click login button",
+        "expectedResult": "User is redirected to dashboard"
+      }
+    ],
+    "labels": ["authentication", "smoke-test", "critical"],
+    "automationStatus": "automated",
+    "createdBy": {
+      "id": "user123",
+      "name": "John Doe",
+      "email": "john@letsmake.com",
+      "image": "https://..."
+    },
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-20T14:30:00Z"
+  }
+]
+```
+</ResponseExample>

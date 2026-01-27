@@ -1,0 +1,63 @@
+---
+title: "Update Execution Results"
+api: "POST /api/executions/{id}/results"
+description: "Update test results for a specific execution (manual execution)"
+---
+
+Update the results of test cases in an execution. This is typically used for manual test execution.
+
+<Info>
+  For automated test results from CI/CD pipelines, use the [Automated Results endpoint](/api-reference/automated-results/push) instead.
+</Info>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the execution
+</ParamField>
+
+<ParamField body="results" type="array" required>
+  Array of test case results to update
+  <Expandable title="Result properties">
+    <ParamField body="testCaseId" type="string" required>
+      ID of the test case
+    </ParamField>
+    <ParamField body="status" type="string" required>
+      Result status. One of: `todo`, `pass`, `fail`, `skipped`, `blocked`
+    </ParamField>
+    <ParamField body="notes" type="string">
+      Notes or comments about the execution
+    </ParamField>
+    <ParamField body="stepResults" type="array">
+      Per-step execution results
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://testlab.letsmake.com/api/executions/exec123/results \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "results": [
+      {
+        "testCaseId": "tc001",
+        "status": "pass",
+        "notes": "Login successful"
+      },
+      {
+        "testCaseId": "tc002",
+        "status": "fail",
+        "notes": "Error message not displayed"
+      }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true
+}
+```
+</ResponseExample>

@@ -1,0 +1,408 @@
+---
+title: "Push Automated Results"
+api: "POST /api/automated-results"
+description: "Push test results from automated test runners (Jest, Cypress, etc.)"
+---
+
+## Overview
+
+This endpoint is designed for CI/CD pipelines to push automated test results. It can either create a new execution or update an existing one, and automatically generates step results based on the overall test status.
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Create New Execution" icon="plus">
+    Provide `suiteId` to create a new execution run
+  </Card>
+  <Card title="Update Existing Execution" icon="arrows-rotate">
+    Provide `executionId` to update results for an existing run
+  </Card>
+</CardGroup>
+
+## Authentication
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key for authentication (recommended for CI/CD)
+</ParamField>
+
+## Request Body
+
+<ParamField body="executionId" type="string">
+  Existing execution ID to update (mutually exclusive with `suiteId`)
+</ParamField>
+
+<ParamField body="suiteId" type="string">
+  Suite ID to create new execution for (mutually exclusive with `executionId`)
+</ParamField>
+
+<ParamField body="suiteName" type="string">
+  Suite name (automatically fetched if not provided)
+</ParamField>
+
+<ParamField body="name" type="string">
+  Name for the new execution (e.g., "CI Run - Sprint 5")
+</ParamField>
+
+<ParamField body="version" type="string">
+  Build or release version being tested
+</ParamField>
+
+<ParamField body="environment" type="string">
+  Environment name (e.g., "staging", "production", "ci")
+</ParamField>
+
+<ParamField body="autoComplete" type="boolean" default={false}>
+  Automatically mark execution as completed when all tests are processed
+</ParamField>
+
+<ParamField body="results" type="array" required>
+  Array of test results to push
+  <Expandable title="Result properties">
+    <ParamField body="testCaseId" type="string" required>
+      ID of the test case (must exist in the system)
+    </ParamField>
+    <ParamField body="status" type="string" required>
+      Test result status. One of: `pass`, `fail`, `skipped`, `blocked`
+    </ParamField>
+    <ParamField body="duration" type="integer">
+      Test execution duration in milliseconds
+    </ParamField>
+    <ParamField body="errorMessage" type="string">
+      Error message or stack trace for failed tests
+    </ParamField>
+    <ParamField body="notes" type="string">
+      Additional notes about the test execution
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## How It Works
+
+### Step Result Auto-Generation
+
+The endpoint automatically generates step results based on the overall test status:
+
+- **Pass**: All steps are marked as `pass`
+- **Fail**: All steps are marked as `fail`
+- **Skipped**: All steps are marked as `skipped`
+
+This eliminates the need to manually track step-by-step results in automated tests.
+
+### Creating vs. Updating
+
+**Create New Execution:**
+```json
+{
+  "suiteId": "suite-123",
+  "name": "CI Run - Build #456",
+  "version": "v1.2.3",
+  "environment": "staging",
+  "results": [...]
+}
+```
+
+**Update Existing Execution:**
+```json
+{
+  "executionId": "exec-789",
+  "results": [...]
+}
+```
+
+### Test Case ID Mapping
+
+Your automated tests need to reference TestLab test case IDs. We recommend:
+
+1. **Naming Convention**: Include the test case ID in your test name
+   ```javascript
+   test('tc-001-login-valid: User can login with valid credentials', ...)
+   ```
+
+2. **Mapping File**: Maintain a mapping between test names and IDs
+   ```javascript
+   const testMapping = {
+     'login with valid credentials': 'tc-001-login-valid',
+     'login with invalid credentials': 'tc-002-login-invalid'
+   }
+   ```
+
+See our [Jest Integration Guide](/guides/ci-cd-integration) for a complete example.
+
+<RequestExample>
+```bash Create New Execution
+curl -X POST https://testlab.letsmake.com/api/automated-results \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "suiteId": "suite-123",
+    "name": "CI Run - Sprint 5",
+    "version": "v1.2.3",
+    "environment": "staging",
+    "autoComplete": true,
+    "results": [
+      {
+        "testCaseId": "tc-001-login-valid",
+        "status": "pass",
+        "duration": 234
+      },
+      {
+        "testCaseId": "tc-002-login-invalid",
+        "status": "pass",
+        "duration": 156
+      },
+      {
+        "testCaseId": "tc-005-add-to-cart",
+        "status": "fail",
+        "duration": 890,
+        "errorMessage": "Expected cart count to be 1, but got 0\n    at Cart.test.js:15:38"
+      }
+    ]
+  }'
+```
+
+```bash Update Existing Execution
+curl -X POST https://testlab.letsmake.com/api/automated-results \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "executionId": "exec-789",
+    "results": [
+      {
+        "testCaseId": "tc-001-login-valid",
+        "status": "pass",
+        "duration": 234
+      }
+    ]
+  }'
+```
+
+```javascript JavaScript/Node.js
+const response = await fetch('https://testlab.letsmake.com/api/automated-results', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': process.env.TESTLAB_API_KEY,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    suiteId: 'suite-123',
+    name: `CI Run - Build #${process.env.BUILD_NUMBER}`,
+    version: process.env.VERSION,
+    environment: 'ci',
+    autoComplete: true,
+    results: [
+      {
+        testCaseId: 'tc-001-login-valid',
+        status: 'pass',
+        duration: 234
+      }
+    ]
+  })
+});
+
+const data = await response.json();
+console.log(`Execution ID: ${data.executionId}`);
+console.log(`Pass: ${data.summary.pass}, Fail: ${data.summary.fail}`);
+```
+
+```python Python
+import requests
+import os
+
+url = "https://testlab.letsmake.com/api/automated-results"
+headers = {
+    "X-API-Key": os.environ["TESTLAB_API_KEY"],
+    "Content-Type": "application/json"
+}
+payload = {
+    "suiteId": "suite-123",
+    "name": f"CI Run - Build #{os.environ['BUILD_NUMBER']}",
+    "version": os.environ["VERSION"],
+    "environment": "ci",
+    "autoComplete": True,
+    "results": [
+        {
+            "testCaseId": "tc-001-login-valid",
+            "status": "pass",
+            "duration": 234
+        }
+    ]
+}
+
+response = requests.post(url, json=payload, headers=headers)
+data = response.json()
+print(f"Execution ID: {data['executionId']}")
+print(f"Pass: {data['summary']['pass']}, Fail: {data['summary']['fail']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "success": true,
+  "executionId": "exec-abc123",
+  "executionStatus": "completed",
+  "processedResults": [
+    {
+      "testCaseId": "tc-001-login-valid",
+      "status": "pass",
+      "success": true
+    },
+    {
+      "testCaseId": "tc-002-login-invalid",
+      "status": "pass",
+      "success": true
+    },
+    {
+      "testCaseId": "tc-005-add-to-cart",
+      "status": "fail",
+      "success": true
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "pass": 2,
+    "fail": 1,
+    "skipped": 0,
+    "blocked": 0,
+    "todo": 0
+  }
+}
+```
+
+```json 400 Bad Request
+{
+  "error": "Either executionId or suiteId is required"
+}
+```
+
+```json 400 Invalid Status
+{
+  "error": "results array is required"
+}
+```
+
+```json 404 Suite Not Found
+{
+  "error": "Suite not found"
+}
+```
+</ResponseExample>
+
+## Response Fields
+
+<ResponseField name="success" type="boolean">
+  Whether the operation was successful
+</ResponseField>
+
+<ResponseField name="executionId" type="string">
+  ID of the created or updated execution
+</ResponseField>
+
+<ResponseField name="executionStatus" type="string">
+  Current status of the execution (`in_progress` or `completed`)
+</ResponseField>
+
+<ResponseField name="processedResults" type="array">
+  Details about each processed test result
+  <Expandable title="Properties">
+    <ResponseField name="testCaseId" type="string">
+      Test case ID
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Result status
+    </ResponseField>
+    <ResponseField name="success" type="boolean">
+      Whether this result was successfully processed
+    </ResponseField>
+    <ResponseField name="error" type="string">
+      Error message if processing failed
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="summary" type="object">
+  Summary statistics of the execution
+  <Expandable title="Properties">
+    <ResponseField name="total" type="integer">
+      Total number of test cases
+    </ResponseField>
+    <ResponseField name="pass" type="integer">
+      Number of passed tests
+    </ResponseField>
+    <ResponseField name="fail" type="integer">
+      Number of failed tests
+    </ResponseField>
+    <ResponseField name="skipped" type="integer">
+      Number of skipped tests
+    </ResponseField>
+    <ResponseField name="blocked" type="integer">
+      Number of blocked tests
+    </ResponseField>
+    <ResponseField name="todo" type="integer">
+      Number of tests not yet executed
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Environment Variables">
+    Store your API key in environment variables, never in code:
+    ```bash
+    export TESTLAB_API_KEY=tlk_your_api_key_here
+    export TESTLAB_SUITE_ID=suite-123
+    ```
+  </Accordion>
+
+  <Accordion title="Include Build Information">
+    Add version and environment information to track results over time:
+    ```json
+    {
+      "version": "v1.2.3",
+      "environment": "staging",
+      "name": "CI Run - Build #456"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Use Auto-Complete">
+    Set `autoComplete: true` to automatically mark executions as done:
+    ```json
+    {
+      "autoComplete": true
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Include Error Details">
+    For failed tests, include stack traces for easier debugging:
+    ```json
+    {
+      "status": "fail",
+      "errorMessage": "Expected value to be true\n    at test.js:42:10"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Track Duration">
+    Include test duration for performance monitoring:
+    ```json
+    {
+      "duration": 1234
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Integration Scripts
+
+We provide ready-to-use integration scripts:
+
+- **Jest**: See our [Jest integration script](https://github.com/letsmake/testlab/blob/main/scripts/jest-to-testlab.js)
+- **Cypress**: Coming soon
+- **Playwright**: Coming soon
+
+<Card title="CI/CD Integration Guide" icon="book" href="/guides/ci-cd-integration">
+  Complete guide for integrating with CI/CD pipelines
+</Card>

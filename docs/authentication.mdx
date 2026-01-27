@@ -1,0 +1,261 @@
+---
+title: Authentication
+description: 'Learn how to authenticate with the TestLab API'
+---
+
+## Overview
+
+The TestLab API requires authentication for all requests. We support two authentication methods to accommodate different use cases:
+
+1. **API Key Authentication** - For CI/CD pipelines and external integrations
+2. **Bearer Token Authentication** - For user sessions (Firebase ID tokens)
+
+## API Key Authentication
+
+API keys are the recommended method for authenticating from CI/CD pipelines, scripts, and external applications.
+
+### Creating an API Key
+
+<Steps>
+  <Step title="Log in to TestLab">
+    Navigate to the TestLab dashboard and sign in with your account
+  </Step>
+  <Step title="Go to Settings">
+    Click on Settings in the navigation menu
+  </Step>
+  <Step title="Create New API Key">
+    In the API Keys section, click "Create New API Key"
+  </Step>
+  <Step title="Name Your Key">
+    Give your API key a descriptive name (e.g., "GitHub Actions CI", "Jenkins Pipeline")
+  </Step>
+  <Step title="Save the Key">
+    Copy and save the API key immediately - it will only be shown once!
+  </Step>
+</Steps>
+
+<Warning>
+  The full API key is only displayed once during creation. If you lose it, you'll need to create a new one.
+</Warning>
+
+### Using API Keys
+
+Include your API key in the `X-API-Key` header with every request:
+
+```bash
+curl -X GET https://testlab.letsmake.com/api/test-cases \
+  -H "X-API-Key: tlk_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890"
+```
+
+### API Key Format
+
+API keys follow this format:
+- Prefix: `tlk_` (TestLab Key)
+- Length: 32 bytes (base64url encoded)
+- Example: `tlk_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890`
+
+### API Key Management
+
+#### List Your API Keys
+
+```bash
+curl -X GET https://testlab.letsmake.com/api/api-keys \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+
+Response:
+```json
+{
+  "apiKeys": [
+    {
+      "id": "clx123abc",
+      "name": "GitHub Actions CI",
+      "keyPreview": "7890",
+      "createdAt": "2024-01-15T10:00:00Z",
+      "lastUsedAt": "2024-01-20T14:30:00Z",
+      "expiresAt": null,
+      "isActive": true
+    }
+  ]
+}
+```
+
+#### Disable an API Key
+
+```bash
+curl -X PATCH https://testlab.letsmake.com/api/api-keys \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "clx123abc",
+    "isActive": false
+  }'
+```
+
+#### Delete an API Key
+
+```bash
+curl -X DELETE https://testlab.letsmake.com/api/api-keys \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "clx123abc"
+  }'
+```
+
+### Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Store Keys Securely">
+    - Never commit API keys to version control
+    - Use environment variables or secret management systems
+    - In GitHub Actions, use [encrypted secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+    - In Jenkins, use the [Credentials Plugin](https://plugins.jenkins.io/credentials/)
+  </Accordion>
+
+  <Accordion title="Rotate Keys Regularly">
+    - Create new API keys periodically
+    - Delete old or unused keys
+    - Set expiration dates for temporary access
+  </Accordion>
+
+  <Accordion title="Use Descriptive Names">
+    - Name keys by their purpose (e.g., "Production CI", "Staging Tests")
+    - This helps identify and manage keys more easily
+    - Makes it easier to track which key is being used where
+  </Accordion>
+
+  <Accordion title="Monitor Usage">
+    - Check the `lastUsedAt` field to identify inactive keys
+    - Remove keys that haven't been used in a while
+    - Investigate any unexpected usage patterns
+  </Accordion>
+</AccordionGroup>
+
+## Bearer Token Authentication
+
+Bearer token authentication uses Firebase ID tokens and is primarily used for user sessions in the web application.
+
+### Getting a Firebase ID Token
+
+When users sign in through the TestLab web interface, Firebase automatically handles authentication and provides an ID token. This token is then used for API requests made by the application.
+
+### Using Bearer Tokens
+
+Include the Firebase ID token in the `Authorization` header:
+
+```bash
+curl -X GET https://testlab.letsmake.com/api/test-cases \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Token Expiration
+
+Firebase ID tokens expire after 1 hour. The web application automatically refreshes tokens, but if you're using tokens directly, you'll need to handle token refresh.
+
+<Note>
+  For programmatic access (CI/CD, scripts, etc.), we recommend using API keys instead of Bearer tokens.
+</Note>
+
+## Error Responses
+
+### Missing Authentication
+
+If you don't provide any authentication:
+
+```json
+{
+  "error": "Missing authentication. Provide either X-API-Key header or Authorization: Bearer <token>"
+}
+```
+
+HTTP Status: `401 Unauthorized`
+
+### Invalid API Key
+
+If your API key is invalid or has been deleted:
+
+```json
+{
+  "error": "Invalid API key"
+}
+```
+
+HTTP Status: `401 Unauthorized`
+
+### Disabled API Key
+
+If your API key has been disabled:
+
+```json
+{
+  "error": "API key is disabled"
+}
+```
+
+HTTP Status: `401 Unauthorized`
+
+### Expired API Key
+
+If your API key has expired:
+
+```json
+{
+  "error": "API key has expired"
+}
+```
+
+HTTP Status: `401 Unauthorized`
+
+## Environment Variables
+
+When integrating with CI/CD systems, store your API key as an environment variable:
+
+<CodeGroup>
+```bash GitHub Actions
+# .github/workflows/test.yml
+env:
+  TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+```
+
+```bash GitLab CI
+# .gitlab-ci.yml
+variables:
+  TESTLAB_API_KEY: $TESTLAB_API_KEY
+```
+
+```bash Jenkins
+# Use credentials binding
+withCredentials([string(credentialsId: 'testlab-api-key', variable: 'TESTLAB_API_KEY')]) {
+  // Your commands here
+}
+```
+
+```bash Environment File
+# .env (DO NOT COMMIT)
+TESTLAB_API_KEY=tlk_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890
+```
+</CodeGroup>
+
+## Testing Your Authentication
+
+To verify your authentication is working correctly:
+
+```bash
+curl -X GET https://testlab.letsmake.com/api/api-keys \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -v
+```
+
+A successful response will return a `200` status code with your API keys list. If authentication fails, you'll receive a `401` status code with an error message.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="rocket" href="/guides/quickstart">
+    Learn how to make your first API request
+  </Card>
+  <Card title="CI/CD Integration" icon="code-branch" href="/guides/ci-cd-integration">
+    Integrate TestLab with your CI/CD pipeline
+  </Card>
+</CardGroup>

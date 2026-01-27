@@ -1,0 +1,37 @@
+---
+title: "Export Test Data"
+api: "GET /api/export"
+description: "Export all test cases and suites as JSON"
+---
+
+Export all test data in JSON format for backup or migration purposes.
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/export \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  > testlab-export.json
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "testCases": [
+    {
+      "id": "tc001",
+      "title": "Test case 1",
+      "steps": [],
+      "labels": []
+    }
+  ],
+  "testSuites": [
+    {
+      "id": "suite123",
+      "name": "Suite 1",
+      "testCaseIds": ["tc001"]
+    }
+  ]
+}
+```
+</ResponseExample>

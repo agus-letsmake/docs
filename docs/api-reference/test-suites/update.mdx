@@ -1,0 +1,44 @@
+---
+title: "Update Test Suite"
+api: "PUT /api/test-suites/{id}"
+description: "Update an existing test suite"
+---
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test suite to update
+</ParamField>
+
+<ParamField body="name" type="string">
+  Updated suite name
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description
+</ParamField>
+
+<ParamField body="testCaseIds" type="array">
+  Updated array of test case IDs (replaces existing)
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://testlab.letsmake.com/api/test-suites/suite123 \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Authentication Suite",
+    "testCaseIds": ["tc001", "tc002", "tc003", "tc004"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "suite123",
+  "name": "Updated Authentication Suite",
+  "testCaseIds": ["tc001", "tc002", "tc003", "tc004"],
+  "updatedAt": "2024-01-21T10:00:00Z"
+}
+```
+</ResponseExample>

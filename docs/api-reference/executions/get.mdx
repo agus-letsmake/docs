@@ -1,0 +1,33 @@
+---
+title: "Get Execution"
+api: "GET /api/executions/{id}"
+description: "Retrieve detailed information about a specific test execution"
+---
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the execution
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/executions/exec123 \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "exec123",
+  "name": "Sprint 5 Regression",
+  "version": "v1.2.3",
+  "environment": "staging",
+  "status": "completed",
+  "suiteId": "suite123",
+  "suiteName": "Authentication Suite",
+  "executedAt": "2024-01-20T10:00:00Z",
+  "completedAt": "2024-01-20T10:15:00Z",
+  "testResults": [...]
+}
+```
+</ResponseExample>

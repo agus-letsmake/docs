@@ -1,0 +1,39 @@
+---
+title: "Get Test Case"
+api: "GET /api/test-cases/{id}"
+description: "Retrieve detailed information about a specific test case"
+---
+
+Fetch a single test case by its ID including all steps, labels, and metadata.
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test case
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/test-cases/clx123abc \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "clx123abc",
+  "title": "User can login with valid credentials",
+  "description": "Verify that users can successfully log in",
+  "steps": [...],
+  "labels": ["authentication", "smoke-test"],
+  "automationStatus": "automated",
+  "createdAt": "2024-01-20T10:00:00Z",
+  "updatedAt": "2024-01-20T10:00:00Z"
+}
+```
+
+```json 404 Not Found
+{
+  "error": "Test case not found"
+}
+```
+</ResponseExample>

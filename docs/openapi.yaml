@@ -1,0 +1,1349 @@
+openapi: 3.0.3
+info:
+  title: TestLab API
+  description: |
+    TestLab is a comprehensive test management system with support for manual and automated test execution.
+
+    This API provides endpoints for managing test cases, test suites, executions, and integrating automated test results from CI/CD pipelines.
+
+    ## Authentication
+
+    All API endpoints require authentication using one of two methods:
+    - **API Key**: Use the `X-API-Key` header with your generated API key (recommended for CI/CD)
+    - **Bearer Token**: Use the `Authorization` header with a Firebase ID token (for user sessions)
+
+    ## Base URL
+
+    Production: `https://testlab.letsmake.com`
+    Development: `http://localhost:3000`
+  version: 1.0.0
+  contact:
+    name: TestLab Support
+    email: support@letsmake.com
+
+servers:
+  - url: https://testlab.letsmake.com
+    description: Production server
+  - url: http://localhost:3000
+    description: Development server
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+tags:
+  - name: Test Cases
+    description: Manage individual test cases
+  - name: Test Suites
+    description: Manage collections of test cases
+  - name: Executions
+    description: Manage test execution runs
+  - name: Automated Results
+    description: Push results from automated test runners (CI/CD)
+  - name: API Keys
+    description: Manage API keys for authentication
+  - name: Data Management
+    description: Import and export test data
+  - name: Reports
+    description: Generate test reports
+
+paths:
+  /api/test-cases:
+    get:
+      summary: List all test cases
+      description: Retrieve a list of all test cases in the system
+      operationId: listTestCases
+      tags:
+        - Test Cases
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestCase"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      summary: Create a new test case
+      description: Create a new test case with steps and metadata
+      operationId: createTestCase
+      tags:
+        - Test Cases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestCaseInput"
+      responses:
+        "201":
+          description: Test case created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestCase"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/test-cases/{id}:
+    get:
+      summary: Get a test case by ID
+      description: Retrieve detailed information about a specific test case
+      operationId: getTestCase
+      tags:
+        - Test Cases
+      parameters:
+        - $ref: "#/components/parameters/TestCaseId"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestCase"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Update a test case
+      description: Update an existing test case
+      operationId: updateTestCase
+      tags:
+        - Test Cases
+      parameters:
+        - $ref: "#/components/parameters/TestCaseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestCaseInput"
+      responses:
+        "200":
+          description: Test case updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestCase"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Delete a test case
+      description: Delete a test case by ID
+      operationId: deleteTestCase
+      tags:
+        - Test Cases
+      parameters:
+        - $ref: "#/components/parameters/TestCaseId"
+      responses:
+        "200":
+          description: Test case deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/test-suites:
+    get:
+      summary: List all test suites
+      description: Retrieve a list of all test suites
+      operationId: listTestSuites
+      tags:
+        - Test Suites
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestSuite"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      summary: Create a new test suite
+      description: Create a new test suite with test cases
+      operationId: createTestSuite
+      tags:
+        - Test Suites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestSuiteInput"
+      responses:
+        "201":
+          description: Test suite created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/test-suites/{id}:
+    get:
+      summary: Get a test suite by ID
+      description: Retrieve detailed information about a specific test suite
+      operationId: getTestSuite
+      tags:
+        - Test Suites
+      parameters:
+        - $ref: "#/components/parameters/TestSuiteId"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Update a test suite
+      description: Update an existing test suite
+      operationId: updateTestSuite
+      tags:
+        - Test Suites
+      parameters:
+        - $ref: "#/components/parameters/TestSuiteId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestSuiteInput"
+      responses:
+        "200":
+          description: Test suite updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Delete a test suite
+      description: Delete a test suite by ID
+      operationId: deleteTestSuite
+      tags:
+        - Test Suites
+      parameters:
+        - $ref: "#/components/parameters/TestSuiteId"
+      responses:
+        "200":
+          description: Test suite deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/test-suites/{id}/test-cases:
+    get:
+      summary: Get test cases in a suite
+      description: Retrieve all test cases that belong to a specific test suite
+      operationId: getTestSuiteTestCases
+      tags:
+        - Test Suites
+      parameters:
+        - $ref: "#/components/parameters/TestSuiteId"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestCase"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/executions:
+    get:
+      summary: List all executions
+      description: Retrieve a list of all test execution runs
+      operationId: listExecutions
+      tags:
+        - Executions
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestExecution"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      summary: Create a new execution
+      description: Create a new test execution run for a test suite
+      operationId: createExecution
+      tags:
+        - Executions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestExecutionInput"
+      responses:
+        "201":
+          description: Test execution created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestExecution"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/executions/{id}:
+    get:
+      summary: Get an execution by ID
+      description: Retrieve detailed information about a specific test execution
+      operationId: getExecution
+      tags:
+        - Executions
+      parameters:
+        - $ref: "#/components/parameters/ExecutionId"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestExecution"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      summary: Update an execution
+      description: Update an existing test execution (e.g., mark as completed)
+      operationId: updateExecution
+      tags:
+        - Executions
+      parameters:
+        - $ref: "#/components/parameters/ExecutionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [in_progress, completed]
+                  description: Execution status
+                name:
+                  type: string
+                  description: Execution name
+                version:
+                  type: string
+                  description: Build/release version
+                environment:
+                  type: string
+                  description: Environment name
+      responses:
+        "200":
+          description: Execution updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestExecution"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Delete an execution
+      description: Delete a test execution by ID
+      operationId: deleteExecution
+      tags:
+        - Executions
+      parameters:
+        - $ref: "#/components/parameters/ExecutionId"
+      responses:
+        "200":
+          description: Execution deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/executions/{id}/results:
+    post:
+      summary: Update execution results
+      description: Update test results for a specific execution (manual execution)
+      operationId: updateExecutionResults
+      tags:
+        - Executions
+      parameters:
+        - $ref: "#/components/parameters/ExecutionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestExecutionResultInput"
+      responses:
+        "200":
+          description: Results updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/automated-results:
+    post:
+      summary: Push automated test results
+      description: |
+        Push test results from automated test runners (Jest, Cypress, etc.).
+        This endpoint can either create a new execution or update an existing one.
+
+        **Creating a new execution:**
+        - Provide `suiteId` to create a new execution for that suite
+        - Optionally provide `name`, `version`, and `environment`
+        - All test cases in the suite will be initialized with 'todo' status
+
+        **Updating an existing execution:**
+        - Provide `executionId` to update an existing execution
+        - Results will be updated or created as needed
+
+        **Step Results:**
+        - Step results are automatically generated based on test status
+        - If test passes, all steps are marked as passed
+        - If test fails, all steps are marked as failed
+
+        **Auto-completion:**
+        - Set `autoComplete: true` to automatically mark execution as completed when all tests are done
+      operationId: pushAutomatedResults
+      tags:
+        - Automated Results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomatedResultsInput"
+            examples:
+              createNewExecution:
+                summary: Create new execution
+                value:
+                  suiteId: clx123abc
+                  name: "CI Run - Sprint 5"
+                  version: "v1.2.3"
+                  environment: "staging"
+                  autoComplete: true
+                  results:
+                    - testCaseId: tc-001-login-valid
+                      status: pass
+                      duration: 234
+                    - testCaseId: tc-002-login-invalid
+                      status: pass
+                      duration: 156
+                    - testCaseId: tc-005-add-to-cart
+                      status: fail
+                      duration: 890
+                      errorMessage: "Expected cart count to be 1, but got 0"
+              updateExistingExecution:
+                summary: Update existing execution
+                value:
+                  executionId: exec123abc
+                  results:
+                    - testCaseId: tc-001-login-valid
+                      status: pass
+                      duration: 234
+      responses:
+        "200":
+          description: Results processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomatedResultsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      summary: Get execution results
+      description: Retrieve results for a specific execution (useful for CI/CD to check test status)
+      operationId: getAutomatedResults
+      tags:
+        - Automated Results
+      parameters:
+        - name: executionId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The execution ID to retrieve results for
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionResultsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/api-keys:
+    get:
+      summary: List API keys
+      description: Retrieve all API keys for the authenticated user
+      operationId: listApiKeys
+      tags:
+        - API Keys
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKeys:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKey"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      summary: Create an API key
+      description: |
+        Create a new API key for authentication. The full key is only returned once upon creation.
+        Save it securely as it cannot be retrieved later.
+      operationId: createApiKey
+      tags:
+        - API Keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Descriptive name for the API key (e.g., "CI Pipeline", "Jenkins")
+                  example: "GitHub Actions Pipeline"
+                expiresAt:
+                  type: string
+                  format: date-time
+                  description: Optional expiration date for the API key
+      responses:
+        "201":
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    allOf:
+                      - $ref: "#/components/schemas/ApiKey"
+                      - type: object
+                        properties:
+                          key:
+                            type: string
+                            description: The full API key (only shown once)
+                            example: "tlk_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890"
+                  message:
+                    type: string
+                    example: "API key created. Save this key - it will not be shown again."
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      summary: Update an API key
+      description: Update an API key (enable/disable or rename)
+      operationId: updateApiKey
+      tags:
+        - API Keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: API key ID
+                isActive:
+                  type: boolean
+                  description: Enable or disable the API key
+                name:
+                  type: string
+                  description: New name for the API key
+      responses:
+        "200":
+          description: API key updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    $ref: "#/components/schemas/ApiKey"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      summary: Delete an API key
+      description: Delete an API key by ID
+      operationId: deleteApiKey
+      tags:
+        - API Keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: API key ID to delete
+      responses:
+        "200":
+          description: API key deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/import:
+    post:
+      summary: Import test data
+      description: Import test cases and suites from JSON file
+      operationId: importData
+      tags:
+        - Data Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                testCases:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestCaseInput"
+                testSuites:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestSuiteInput"
+      responses:
+        "200":
+          description: Data imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  imported:
+                    type: object
+                    properties:
+                      testCases:
+                        type: integer
+                      testSuites:
+                        type: integer
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/export:
+    get:
+      summary: Export test data
+      description: Export all test cases and suites as JSON
+      operationId: exportData
+      tags:
+        - Data Management
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  testCases:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TestCase"
+                  testSuites:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TestSuite"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/reports/pdf:
+    get:
+      summary: Generate PDF report
+      description: Generate a PDF report for a test execution
+      operationId: generatePdfReport
+      tags:
+        - Reports
+      parameters:
+        - name: executionId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The execution ID to generate report for
+      responses:
+        "200":
+          description: PDF report generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for CI/CD and external integrations
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID token for user authentication
+
+  parameters:
+    TestCaseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Test case ID
+
+    TestSuiteId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Test suite ID
+
+    ExecutionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Test execution ID
+
+  schemas:
+    UserReference:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+        image:
+          type: string
+          nullable: true
+          description: Profile picture URL
+
+    TestCaseStep:
+      type: object
+      required:
+        - id
+        - description
+        - expectedResult
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        expectedResult:
+          type: string
+
+    TestCase:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        preconditions:
+          type: string
+          nullable: true
+        epicOrFeature:
+          type: string
+          nullable: true
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestCaseStep"
+        labels:
+          type: array
+          items:
+            type: string
+        automationStatus:
+          type: string
+          enum: [not_automated, automated, will_not_automate]
+          default: not_automated
+        createdBy:
+          $ref: "#/components/schemas/UserReference"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TestCaseInput:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        preconditions:
+          type: string
+        epicOrFeature:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestCaseStep"
+        labels:
+          type: array
+          items:
+            type: string
+        automationStatus:
+          type: string
+          enum: [not_automated, automated, will_not_automate]
+
+    TestSuite:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        testCaseIds:
+          type: array
+          items:
+            type: string
+        createdBy:
+          $ref: "#/components/schemas/UserReference"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TestSuiteInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        testCaseIds:
+          type: array
+          items:
+            type: string
+
+    StepExecutionResult:
+      type: object
+      properties:
+        stepId:
+          type: string
+        status:
+          type: string
+          enum: [todo, pass, fail]
+
+    TestExecutionResult:
+      type: object
+      properties:
+        testCaseId:
+          type: string
+        status:
+          type: string
+          enum: [todo, pass, fail, skipped, blocked]
+        notes:
+          type: string
+          nullable: true
+        stepResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepExecutionResult"
+        source:
+          type: string
+          enum: [manual, automated]
+        duration:
+          type: integer
+          nullable: true
+          description: Duration in milliseconds (for automated tests)
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message/stack trace (for automated tests)
+        executedBy:
+          $ref: "#/components/schemas/UserReference"
+        executedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    TestExecutionResultInput:
+      type: object
+      required:
+        - testCaseId
+        - status
+      properties:
+        testCaseId:
+          type: string
+        status:
+          type: string
+          enum: [todo, pass, fail, skipped, blocked]
+        notes:
+          type: string
+        stepResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepExecutionResult"
+        duration:
+          type: integer
+          description: Duration in milliseconds
+        errorMessage:
+          type: string
+          description: Error message/stack trace
+
+    TestExecution:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        version:
+          type: string
+          nullable: true
+        environment:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [in_progress, completed]
+        suiteId:
+          type: string
+        suiteName:
+          type: string
+        createdBy:
+          $ref: "#/components/schemas/UserReference"
+        executedBy:
+          $ref: "#/components/schemas/UserReference"
+        executedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        testResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestExecutionResult"
+
+    TestExecutionInput:
+      type: object
+      required:
+        - suiteId
+        - suiteName
+        - testCaseIds
+      properties:
+        suiteId:
+          type: string
+        suiteName:
+          type: string
+        testCaseIds:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        version:
+          type: string
+        environment:
+          type: string
+
+    AutomatedResultsInput:
+      type: object
+      required:
+        - results
+      properties:
+        executionId:
+          type: string
+          description: Existing execution ID to update (mutually exclusive with suiteId)
+        suiteId:
+          type: string
+          description: Suite ID to create new execution for (mutually exclusive with executionId)
+        suiteName:
+          type: string
+          description: Suite name (fetched automatically if not provided)
+        name:
+          type: string
+          description: Name for the new execution
+        version:
+          type: string
+          description: Build/release version
+        environment:
+          type: string
+          description: Environment name (e.g., staging, production)
+        autoComplete:
+          type: boolean
+          description: Automatically mark execution as completed when all tests are done
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestExecutionResultInput"
+
+    AutomatedResultsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        executionId:
+          type: string
+        executionStatus:
+          type: string
+          enum: [in_progress, completed]
+        processedResults:
+          type: array
+          items:
+            type: object
+            properties:
+              testCaseId:
+                type: string
+              status:
+                type: string
+              success:
+                type: boolean
+              error:
+                type: string
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            pass:
+              type: integer
+            fail:
+              type: integer
+            skipped:
+              type: integer
+            blocked:
+              type: integer
+            todo:
+              type: integer
+
+    ExecutionResultsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        environment:
+          type: string
+        status:
+          type: string
+        suiteName:
+          type: string
+        executedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            pass:
+              type: integer
+            fail:
+              type: integer
+            skipped:
+              type: integer
+            blocked:
+              type: integer
+            todo:
+              type: integer
+            automated:
+              type: integer
+            manual:
+              type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              testCaseId:
+                type: string
+              testCaseTitle:
+                type: string
+              status:
+                type: string
+              source:
+                type: string
+              duration:
+                type: integer
+              errorMessage:
+                type: string
+              notes:
+                type: string
+              executedAt:
+                type: string
+                format: date-time
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        keyPreview:
+          type: string
+          description: Last 4 characters of the key
+        createdAt:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        isActive:
+          type: boolean
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Missing authentication. Provide either X-API-Key header or Authorization: Bearer <token>"
+
+    BadRequestError:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

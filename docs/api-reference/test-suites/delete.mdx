@@ -1,0 +1,28 @@
+---
+title: "Delete Test Suite"
+api: "DELETE /api/test-suites/{id}"
+description: "Delete a test suite by ID"
+---
+
+<Warning>
+  This will also delete all associated executions for this suite.
+</Warning>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test suite to delete
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://testlab.letsmake.com/api/test-suites/suite123 \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true
+}
+```
+</ResponseExample>

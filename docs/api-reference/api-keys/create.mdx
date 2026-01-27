@@ -1,0 +1,48 @@
+---
+title: "Create API Key"
+api: "POST /api/api-keys"
+description: "Create a new API key for authentication"
+---
+
+Create a new API key. The full key is only returned once upon creation.
+
+<Warning>
+  Save the API key immediately! It cannot be retrieved later. If lost, you must create a new one.
+</Warning>
+
+<ParamField body="name" type="string" required>
+  Descriptive name for the API key (e.g., "CI Pipeline", "Jenkins")
+</ParamField>
+
+<ParamField body="expiresAt" type="string">
+  Optional expiration date in ISO 8601 format
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://testlab.letsmake.com/api/api-keys \
+  -H "Authorization: Bearer <firebase-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "GitHub Actions Pipeline",
+    "expiresAt": "2024-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "apiKey": {
+    "id": "key123",
+    "name": "GitHub Actions Pipeline",
+    "keyPreview": "7890",
+    "key": "tlk_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890",
+    "createdAt": "2024-01-20T10:00:00Z",
+    "expiresAt": "2024-12-31T23:59:59Z",
+    "isActive": true
+  },
+  "message": "API key created. Save this key - it will not be shown again."
+}
+```
+</ResponseExample>

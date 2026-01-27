@@ -1,0 +1,36 @@
+---
+title: "Delete Test Case"
+api: "DELETE /api/test-cases/{id}"
+description: "Delete a test case by ID"
+---
+
+Permanently delete a test case from the system.
+
+<Warning>
+  This action cannot be undone. The test case will be removed from all test suites and executions.
+</Warning>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test case to delete
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://testlab.letsmake.com/api/test-cases/clx123abc \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true
+}
+```
+
+```json 404 Not Found
+{
+  "error": "Test case not found"
+}
+```
+</ResponseExample>

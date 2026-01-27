@@ -1,0 +1,39 @@
+---
+title: "Get Suite Test Cases"
+api: "GET /api/test-suites/{id}/test-cases"
+description: "Retrieve all test cases that belong to a specific test suite"
+---
+
+Get the full details of all test cases in a suite, ordered by their position in the suite.
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test suite
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/test-suites/suite123/test-cases \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": "tc001",
+    "title": "User can login with valid credentials",
+    "steps": [...],
+    "labels": ["authentication"],
+    "automationStatus": "automated"
+  },
+  {
+    "id": "tc002",
+    "title": "User cannot login with invalid credentials",
+    "steps": [...],
+    "labels": ["authentication"],
+    "automationStatus": "automated"
+  }
+]
+```
+</ResponseExample>

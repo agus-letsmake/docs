@@ -1,0 +1,40 @@
+---
+title: "List Executions"
+api: "GET /api/executions"
+description: "Retrieve a list of all test execution runs"
+---
+
+Get all test executions with their results and status information.
+
+<RequestExample>
+```bash cURL
+curl -X GET https://testlab.letsmake.com/api/executions \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": "exec123",
+    "name": "Sprint 5 Regression",
+    "version": "v1.2.3",
+    "environment": "staging",
+    "status": "completed",
+    "suiteId": "suite123",
+    "suiteName": "Authentication Test Suite",
+    "executedAt": "2024-01-20T10:00:00Z",
+    "completedAt": "2024-01-20T10:15:00Z",
+    "testResults": [
+      {
+        "testCaseId": "tc001",
+        "status": "pass",
+        "source": "automated",
+        "duration": 234
+      }
+    ]
+  }
+]
+```
+</ResponseExample>

@@ -1,0 +1,51 @@
+---
+title: "Import Test Data"
+api: "POST /api/import"
+description: "Import test cases and suites from JSON file"
+---
+
+Bulk import test cases and test suites from a JSON payload.
+
+<ParamField body="testCases" type="array">
+  Array of test cases to import
+</ParamField>
+
+<ParamField body="testSuites" type="array">
+  Array of test suites to import
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://testlab.letsmake.com/api/import \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "testCases": [
+      {
+        "title": "Test case 1",
+        "steps": [],
+        "labels": []
+      }
+    ],
+    "testSuites": [
+      {
+        "name": "Suite 1",
+        "description": "Imported suite",
+        "testCaseIds": []
+      }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true,
+  "imported": {
+    "testCases": 1,
+    "testSuites": 1
+  }
+}
+```
+</ResponseExample>

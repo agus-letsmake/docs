@@ -1,0 +1,72 @@
+---
+title: "Create Execution"
+api: "POST /api/executions"
+description: "Create a new test execution run for a test suite"
+---
+
+Create a new test execution. All test cases in the suite will be initialized with 'todo' status.
+
+<ParamField body="suiteId" type="string" required>
+  ID of the test suite to execute
+</ParamField>
+
+<ParamField body="suiteName" type="string" required>
+  Name of the test suite (for quick reference)
+</ParamField>
+
+<ParamField body="testCaseIds" type="array" required>
+  Array of test case IDs to include in this execution
+</ParamField>
+
+<ParamField body="name" type="string">
+  Name for this execution (e.g., "Sprint 5 Regression")
+</ParamField>
+
+<ParamField body="version" type="string">
+  Build or release version being tested
+</ParamField>
+
+<ParamField body="environment" type="string">
+  Environment name (e.g., "staging", "production")
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://testlab.letsmake.com/api/executions \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "suiteId": "suite123",
+    "suiteName": "Authentication Suite",
+    "testCaseIds": ["tc001", "tc002"],
+    "name": "Sprint 5 Regression",
+    "version": "v1.2.3",
+    "environment": "staging"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": "exec123",
+  "name": "Sprint 5 Regression",
+  "version": "v1.2.3",
+  "environment": "staging",
+  "status": "in_progress",
+  "suiteId": "suite123",
+  "suiteName": "Authentication Suite",
+  "executedAt": "2024-01-20T10:00:00Z",
+  "testResults": [
+    {
+      "testCaseId": "tc001",
+      "status": "todo"
+    },
+    {
+      "testCaseId": "tc002",
+      "status": "todo"
+    }
+  ]
+}
+```
+</ResponseExample>

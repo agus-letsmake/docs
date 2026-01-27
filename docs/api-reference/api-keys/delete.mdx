@@ -1,0 +1,34 @@
+---
+title: "Delete API Key"
+api: "DELETE /api/api-keys"
+description: "Delete an API key by ID"
+---
+
+Permanently delete an API key. This action cannot be undone.
+
+<Warning>
+  Any integrations using this API key will immediately stop working.
+</Warning>
+
+<ParamField body="id" type="string" required>
+  API key ID to delete
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://testlab.letsmake.com/api/api-keys \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "key123"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "success": true
+}
+```
+</ResponseExample>

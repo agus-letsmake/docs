@@ -1,0 +1,45 @@
+---
+title: "Update API Key"
+api: "PATCH /api/api-keys"
+description: "Update an API key (enable/disable or rename)"
+---
+
+Update API key settings such as name or active status.
+
+<ParamField body="id" type="string" required>
+  API key ID to update
+</ParamField>
+
+<ParamField body="isActive" type="boolean">
+  Enable or disable the API key
+</ParamField>
+
+<ParamField body="name" type="string">
+  New name for the API key
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PATCH https://testlab.letsmake.com/api/api-keys \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "key123",
+    "isActive": false
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "apiKey": {
+    "id": "key123",
+    "name": "GitHub Actions Pipeline",
+    "keyPreview": "7890",
+    "isActive": false,
+    "updatedAt": "2024-01-20T10:00:00Z"
+  }
+}
+```
+</ResponseExample>

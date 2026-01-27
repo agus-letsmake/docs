@@ -1,0 +1,46 @@
+---
+title: "Update Execution"
+api: "PUT /api/executions/{id}"
+description: "Update an existing test execution (e.g., mark as completed)"
+---
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the execution to update
+</ParamField>
+
+<ParamField body="status" type="string">
+  Execution status. One of: `in_progress`, `completed`
+</ParamField>
+
+<ParamField body="name" type="string">
+  Updated execution name
+</ParamField>
+
+<ParamField body="version" type="string">
+  Updated version
+</ParamField>
+
+<ParamField body="environment" type="string">
+  Updated environment
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://testlab.letsmake.com/api/executions/exec123 \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "completed"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "exec123",
+  "status": "completed",
+  "completedAt": "2024-01-20T10:15:00Z"
+}
+```
+</ResponseExample>

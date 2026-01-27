@@ -1,0 +1,32 @@
+---
+title: "Generate PDF Report"
+api: "GET /api/reports/pdf"
+description: "Generate a PDF report for a test execution"
+---
+
+Generate a PDF report containing execution results and test case details.
+
+<ParamField query="executionId" type="string" required>
+  The execution ID to generate report for
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://testlab.letsmake.com/api/reports/pdf?executionId=exec123" \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  --output execution-report.pdf
+```
+</RequestExample>
+
+<ResponseExample>
+```text 200 OK
+Returns PDF binary data
+Content-Type: application/pdf
+```
+
+```json 404 Not Found
+{
+  "error": "Execution not found"
+}
+```
+</ResponseExample>

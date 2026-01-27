@@ -1,0 +1,44 @@
+---
+title: "Create Test Suite"
+api: "POST /api/test-suites"
+description: "Create a new test suite with test cases"
+---
+
+Create a new test suite and optionally add test cases to it.
+
+<ParamField body="name" type="string" required>
+  Name of the test suite
+</ParamField>
+
+<ParamField body="description" type="string">
+  Description of what this suite tests
+</ParamField>
+
+<ParamField body="testCaseIds" type="array">
+  Array of test case IDs to include in this suite
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://testlab.letsmake.com/api/test-suites \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Authentication Test Suite",
+    "description": "Tests for user authentication",
+    "testCaseIds": ["tc001", "tc002", "tc003"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": "suite123",
+  "name": "Authentication Test Suite",
+  "description": "Tests for user authentication",
+  "testCaseIds": ["tc001", "tc002", "tc003"],
+  "createdAt": "2024-01-20T10:00:00Z"
+}
+```
+</ResponseExample>

@@ -1,0 +1,157 @@
+---
+title: Introduction
+description: 'Welcome to the TestLab API documentation'
+---
+
+## Welcome to TestLab API
+
+TestLab is a comprehensive test management system designed for modern development teams. It combines manual test execution tracking with automated test result integration from CI/CD pipelines.
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="Test Case Management" icon="list-check">
+    Create, organize, and manage test cases with detailed steps and expected results
+  </Card>
+  <Card title="Test Suites" icon="layer-group">
+    Group related test cases into suites for organized test execution
+  </Card>
+  <Card title="Manual Execution" icon="hand-pointer">
+    Track manual test execution with step-by-step result recording
+  </Card>
+  <Card title="CI/CD Integration" icon="robot">
+    Push automated test results from Jest, Cypress, and other test frameworks
+  </Card>
+</CardGroup>
+
+## Authentication
+
+The TestLab API supports two authentication methods:
+
+### API Key Authentication
+Recommended for CI/CD pipelines and external integrations. Include the API key in the request header:
+
+```bash
+X-API-Key: tlk_your_api_key_here
+```
+
+### Bearer Token Authentication
+Used for user sessions with Firebase authentication:
+
+```bash
+Authorization: Bearer <firebase-id-token>
+```
+
+<Info>
+  You can generate API keys from the Settings page in the TestLab dashboard.
+  The full key is only shown once during creation, so make sure to save it securely.
+</Info>
+
+## Base URL
+
+All API requests should be made to:
+
+<CodeGroup>
+```bash Production
+https://testlab.letsmake.com/api
+```
+
+```bash Development
+http://localhost:3000/api
+```
+</CodeGroup>
+
+## Response Format
+
+All API responses are in JSON format. Successful responses return the requested data or a success confirmation:
+
+```json
+{
+  "id": "clx123abc",
+  "name": "Test Suite 1",
+  "description": "Suite description"
+}
+```
+
+Error responses include an error message:
+
+```json
+{
+  "error": "Resource not found"
+}
+```
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes:
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Success - Request completed successfully |
+| 201 | Created - Resource created successfully |
+| 400 | Bad Request - Invalid request parameters |
+| 401 | Unauthorized - Authentication required or failed |
+| 404 | Not Found - Resource not found |
+| 500 | Internal Server Error - Server error occurred |
+
+## Rate Limiting
+
+Currently, there are no rate limits enforced. However, we recommend implementing reasonable request throttling in your integrations to ensure optimal performance.
+
+## Common Use Cases
+
+### For QA Teams
+- Create and manage test cases with detailed steps
+- Organize tests into suites by feature or sprint
+- Execute manual tests and track results
+- Generate test execution reports
+
+### For Development Teams
+- Integrate automated tests from CI/CD pipelines
+- Track test coverage and automation status
+- Monitor test results across different environments
+- Identify failing tests quickly
+
+### For CI/CD Pipelines
+- Push test results from Jest, Cypress, Playwright, etc.
+- Create test executions automatically on each build
+- Track test metrics over time
+- Fail builds based on test results
+
+## Quick Start
+
+<Steps>
+  <Step title="Generate an API Key">
+    Log in to TestLab and navigate to Settings to create a new API key
+  </Step>
+  <Step title="Make Your First Request">
+    Test your API key by listing test cases:
+    ```bash
+    curl -X GET https://testlab.letsmake.com/api/test-cases \
+      -H "X-API-Key: tlk_your_api_key_here"
+    ```
+  </Step>
+  <Step title="Create a Test Case">
+    Create your first test case via the API
+  </Step>
+  <Step title="Push Automated Results">
+    Integrate with your CI/CD pipeline to push test results
+  </Step>
+</Steps>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Detailed documentation for all API endpoints
+  </Card>
+  <Card title="Integration Guides" icon="book" href="/guides">
+    Step-by-step guides for common integrations
+  </Card>
+  <Card title="Support" icon="life-ring" href="mailto:support@letsmake.com">
+    Contact our support team
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/letsmake/testlab">
+    View the project on GitHub
+  </Card>
+</CardGroup>

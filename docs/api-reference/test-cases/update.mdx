@@ -1,0 +1,54 @@
+---
+title: "Update Test Case"
+api: "PUT /api/test-cases/{id}"
+description: "Update an existing test case"
+---
+
+Update any field of an existing test case. All fields from the create endpoint are supported.
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the test case to update
+</ParamField>
+
+<ParamField body="title" type="string">
+  Updated test case title
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description
+</ParamField>
+
+<ParamField body="steps" type="array">
+  Updated array of test steps
+</ParamField>
+
+<ParamField body="labels" type="array">
+  Updated labels
+</ParamField>
+
+<ParamField body="automationStatus" type="string">
+  Updated automation status
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://testlab.letsmake.com/api/test-cases/clx123abc \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated test case title",
+    "automationStatus": "automated"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "clx123abc",
+  "title": "Updated test case title",
+  "automationStatus": "automated",
+  "updatedAt": "2024-01-21T10:00:00Z"
+}
+```
+</ResponseExample>
