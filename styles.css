@@ -22,11 +22,11 @@ body {
 }
 
 /* Primary purple for links and buttons */
-a {
+a:not([href*="vercel"]):not([href*="poc-test"]) {
   color: var(--color-primary);
 }
 
-a:hover {
+a:not([href*="vercel"]):not([href*="poc-test"]):hover {
   color: oklch(0.50 0.25 290); /* Slightly darker on hover */
 }
 
@@ -86,45 +86,20 @@ p, span, div {
   color: var(--color-text);
 }
 
-/* Navigation - REMOVE ALL HIGHLIGHTING except selected item */
-
-/* Remove section title highlighting completely */
-[class*="group"],
-[class*="nav-group"],
-.group-title,
-[class*="group-title"],
-nav h3,
+/* Navigation section titles */
 nav h2,
-nav h4,
-[data-group],
-[class*="NavigationGroup"] {
-  background-color: transparent !important;
+nav h3,
+nav h4 {
   color: var(--color-text) !important;
   font-weight: 600 !important;
 }
 
-/* Navigation items - normal weight by default */
-nav a:not([aria-current="page"]),
-[class*="sidebar"] a:not([aria-current="page"]) {
-  font-weight: normal !important;
-}
-
-/* Highlight selected sidebar section in purple */
-.bg-primary\/10,
-[class*="bg-primary/10"],
-.text-primary.bg-primary\/10,
-a.text-primary,
-.group.text-primary {
+/* Highlight ONLY the active sidebar item (has both bg-primary/10 AND text-primary) */
+.bg-primary\/10.text-primary,
+.text-primary.bg-primary\/10 {
   background-color: var(--color-purple-highlight) !important;
   color: var(--color-primary) !important;
   font-weight: 600 !important;
-  border-left: 3px solid var(--color-primary) !important;
-}
-
-/* Ensure hover doesn't add backgrounds to non-active items */
-nav a:hover:not([aria-current="page"]),
-[class*="nav-item"]:hover:not([aria-current="page"]) {
-  background-color: transparent !important;
 }
 
 /* Remove bubble/highlight from selected tab */
@@ -155,9 +130,7 @@ img[alt*="logo"],
 
 /* Dashboard button - ensure it's visible and styled */
 a[href*="vercel"],
-a[href*="dashboard"],
-[class*="TopbarCta"],
-[class*="topbar-cta"] {
+a[href*="poc-test"] {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -168,11 +141,10 @@ a[href*="dashboard"],
   font-weight: 500 !important;
 }
 
-/* Dashboard button hover - stay purple */
+/* Dashboard button hover - stay purple, slightly darker */
 a[href*="vercel"]:hover,
-a[href*="dashboard"]:hover,
-[class*="TopbarCta"]:hover,
-[class*="topbar-cta"]:hover {
-  background-color: oklch(0.50 0.25 290) !important;
+a[href*="poc-test"]:hover {
+  background-color: oklch(0.45 0.25 290) !important;
   color: white !important;
+  opacity: 1 !important;
 }
