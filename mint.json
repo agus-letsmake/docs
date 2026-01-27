@@ -27,11 +27,11 @@
   "tabs": [
     {
       "name": "API Reference",
-      "url": "api-reference"
+      "url": "docs/api-reference"
     },
     {
       "name": "Guides",
-      "url": "guides"
+      "url": "docs/guides"
     }
   ],
   "anchors": [
@@ -45,77 +45,77 @@
     {
       "group": "Get Started",
       "pages": [
-        "introduction",
-        "authentication"
+        "docs/introduction",
+        "docs/authentication"
       ]
     },
     {
       "group": "Test Cases",
       "pages": [
-        "api-reference/test-cases/list",
-        "api-reference/test-cases/create",
-        "api-reference/test-cases/get",
-        "api-reference/test-cases/update",
-        "api-reference/test-cases/delete"
+        "docs/api-reference/test-cases/list",
+        "docs/api-reference/test-cases/create",
+        "docs/api-reference/test-cases/get",
+        "docs/api-reference/test-cases/update",
+        "docs/api-reference/test-cases/delete"
       ]
     },
     {
       "group": "Test Suites",
       "pages": [
-        "api-reference/test-suites/list",
-        "api-reference/test-suites/create",
-        "api-reference/test-suites/get",
-        "api-reference/test-suites/update",
-        "api-reference/test-suites/delete",
-        "api-reference/test-suites/test-cases"
+        "docs/api-reference/test-suites/list",
+        "docs/api-reference/test-suites/create",
+        "docs/api-reference/test-suites/get",
+        "docs/api-reference/test-suites/update",
+        "docs/api-reference/test-suites/delete",
+        "docs/api-reference/test-suites/test-cases"
       ]
     },
     {
       "group": "Executions",
       "pages": [
-        "api-reference/executions/list",
-        "api-reference/executions/create",
-        "api-reference/executions/get",
-        "api-reference/executions/update",
-        "api-reference/executions/delete",
-        "api-reference/executions/results"
+        "docs/api-reference/executions/list",
+        "docs/api-reference/executions/create",
+        "docs/api-reference/executions/get",
+        "docs/api-reference/executions/update",
+        "docs/api-reference/executions/delete",
+        "docs/api-reference/executions/results"
       ]
     },
     {
       "group": "Automated Results",
       "pages": [
-        "api-reference/automated-results/push",
-        "api-reference/automated-results/get"
+        "docs/api-reference/automated-results/push",
+        "docs/api-reference/automated-results/get"
       ]
     },
     {
       "group": "API Keys",
       "pages": [
-        "api-reference/api-keys/list",
-        "api-reference/api-keys/create",
-        "api-reference/api-keys/update",
-        "api-reference/api-keys/delete"
+        "docs/api-reference/api-keys/list",
+        "docs/api-reference/api-keys/create",
+        "docs/api-reference/api-keys/update",
+        "docs/api-reference/api-keys/delete"
       ]
     },
     {
       "group": "Data Management",
       "pages": [
-        "api-reference/data/import",
-        "api-reference/data/export"
+        "docs/api-reference/data/import",
+        "docs/api-reference/data/export"
       ]
     },
     {
       "group": "Reports",
       "pages": [
-        "api-reference/reports/pdf"
+        "docs/api-reference/reports/pdf"
       ]
     },
     {
       "group": "Integration Guides",
       "pages": [
-        "guides/quickstart",
-        "guides/ci-cd-integration",
-        "guides/examples"
+        "docs/guides/quickstart",
+        "docs/guides/ci-cd-integration",
+        "docs/guides/examples"
       ]
     }
   ],
@@ -132,5 +132,5 @@
       "mode": "simple"
     }
   },
-  "openapi": "openapi.yaml"
+  "openapi": "docs/openapi.yaml"
 }
