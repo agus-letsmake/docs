@@ -108,10 +108,33 @@ nav a:not([aria-current="page"]),
   font-weight: normal !important;
 }
 
+/* Highlight selected sidebar section in purple */
+[class*="sidebar"] a[aria-current="page"],
+nav a[aria-current="page"],
+[data-active="true"] {
+  background-color: var(--color-accent) !important;
+  color: var(--color-primary) !important;
+  font-weight: 600 !important;
+  border-left: 3px solid var(--color-primary) !important;
+  padding-left: 12px !important;
+}
+
 /* Ensure hover doesn't add backgrounds to non-active items */
 nav a:hover:not([aria-current="page"]),
 [class*="nav-item"]:hover:not([aria-current="page"]) {
   background-color: transparent !important;
+}
+
+/* Ensure dashboard button is fully visible */
+[class*="topbar"] button,
+[class*="cta"] button,
+header button,
+a[href*="dashboard"],
+[class*="topbarCta"] {
+  z-index: 100 !important;
+  position: relative !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Remove bubble/highlight from selected tab */
@@ -136,9 +159,9 @@ img[alt*="logo"],
 header img,
 nav img[src*="makelogo"] {
   height: auto !important;
-  max-height: 60px !important;
+  max-height: 57px !important;
   width: auto !important;
-  min-width: 150px !important;
+  min-width: 142px !important;
   object-fit: contain !important;
   margin-left: 0 !important;
 }

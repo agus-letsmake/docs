@@ -6,6 +6,10 @@
     "light": "/makelogo.png"
   },
   "favicon": "/favicon.ico",
+  "modeToggle": {
+    "default": "light",
+    "isHidden": true
+  },
   "colors": {
     "primary": "#8b5cf6",
     "light": "#f5f3ff",
