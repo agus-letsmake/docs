@@ -15,7 +15,9 @@
       "dark": "#1a0b2e"
     }
   },
-  "css": ["/styles.css"],
+  "css": [
+    "/styles.css"
+  ],
   "topbarLinks": [
     {
       "name": "Support",
@@ -34,13 +36,6 @@
     {
       "name": "Guides",
       "url": "docs/guides"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "GitHub",
-      "icon": "github",
-      "url": "https://github.com/letsmake/testlab"
     }
   ],
   "navigation": [

@@ -64,15 +64,71 @@ nav {
   background-color: var(--color-accent);
 }
 
-/* Code blocks - keep readable with slight purple tint */
+/* Code blocks - remove highlight/background */
 pre,
 code {
-  background-color: var(--color-accent);
+  background-color: transparent !important;
   color: var(--color-text);
+}
+
+/* Remove background from inline code */
+code:not(pre code) {
+  background-color: transparent !important;
+  border: 1px solid oklch(0.9 0.01 290);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 /* Ensure black text throughout */
 h1, h2, h3, h4, h5, h6,
 p, span, div {
   color: var(--color-text);
+}
+
+/* Navigation - only highlight selected item, not sections */
+/* Remove section title highlighting */
+[class*="group"]:has([aria-current="page"]) > [class*="group-title"],
+[class*="nav-group"]:has([aria-current="page"]) > h3,
+[class*="nav-group"]:has([aria-current="page"]) > [class*="title"] {
+  background-color: transparent !important;
+  font-weight: normal !important;
+}
+
+/* Only highlight the active/selected navigation item */
+[aria-current="page"],
+.active-page,
+[class*="active"][class*="nav-item"] {
+  background-color: var(--color-accent) !important;
+  border-left: 3px solid var(--color-primary);
+  font-weight: 500;
+}
+
+/* Remove background from non-selected items */
+[class*="nav-item"]:not([aria-current="page"]) {
+  background-color: transparent !important;
+}
+
+/* Ensure section titles are never highlighted */
+[class*="nav-group"] > h3,
+[class*="nav-group"] > [class*="title"],
+.group-title {
+  background-color: transparent !important;
+  color: var(--color-text) !important;
+  font-weight: 600 !important;
+}
+
+/* Remove bubble/highlight from selected tab */
+[class*="tab"][class*="active"],
+[class*="tab"][aria-selected="true"],
+[class*="tabs"] [class*="active"],
+button[role="tab"][aria-selected="true"] {
+  background-color: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove any tab indicator/bubble */
+[class*="tab-indicator"],
+[class*="TabIndicator"] {
+  display: none !important;
 }
