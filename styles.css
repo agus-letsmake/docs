@@ -87,14 +87,6 @@ p, span, div {
 
 /* Navigation - REMOVE ALL HIGHLIGHTING except selected item */
 
-/* Remove ALL backgrounds from navigation by default */
-nav *,
-[class*="sidebar"] *,
-[class*="navigation"] *,
-[class*="nav-"] * {
-  background-color: transparent !important;
-}
-
 /* Remove section title highlighting completely */
 [class*="group"],
 [class*="nav-group"],
@@ -110,44 +102,13 @@ nav h4,
   font-weight: 600 !important;
 }
 
-/* Remove background from ALL navigation items */
-[class*="nav-item"],
-[class*="NavigationItem"],
-nav a,
-nav button,
-[class*="sidebar"] a,
-[class*="sidebar"] button {
-  background-color: transparent !important;
-  border: none !important;
+/* Navigation items - normal weight by default */
+nav a:not([aria-current="page"]),
+[class*="sidebar"] a:not([aria-current="page"]) {
   font-weight: normal !important;
 }
 
-/* ONLY highlight the currently selected/active navigation item */
-nav a[aria-current="page"],
-[aria-current="page"],
-.active-page,
-[data-active="true"],
-[class*="sidebar"] a[aria-current="page"],
-[class*="NavigationItem"][data-active="true"] {
-  background-color: var(--color-accent) !important;
-  border-left: 3px solid var(--color-primary) !important;
-  font-weight: 600 !important;
-  color: var(--color-primary) !important;
-}
-
-/* Ensure method icons are visible */
-nav a[aria-current="page"] [class*="icon"],
-nav a[aria-current="page"] [class*="method"],
-nav a[aria-current="page"] span[class*="badge"],
-[aria-current="page"] [class*="icon"],
-[aria-current="page"] [class*="method"],
-[aria-current="page"] span[class*="badge"] {
-  display: inline-flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Ensure hover doesn't add backgrounds */
+/* Ensure hover doesn't add backgrounds to non-active items */
 nav a:hover:not([aria-current="page"]),
 [class*="nav-item"]:hover:not([aria-current="page"]) {
   background-color: transparent !important;
@@ -179,7 +140,5 @@ nav img[src*="makelogo"] {
   width: auto !important;
   min-width: 150px !important;
   object-fit: contain !important;
-  transform: scale(1.5);
-  transform-origin: left center;
   margin-left: 0 !important;
 }
