@@ -110,15 +110,15 @@ nav a:not([aria-current="page"]),
 }
 
 /* Highlight selected sidebar section in purple */
-[aria-current="page"],
-a[aria-current="page"],
-[data-active="true"],
-.active {
+.bg-primary\/10,
+[class*="bg-primary/10"],
+.text-primary.bg-primary\/10,
+a.text-primary,
+.group.text-primary {
   background-color: var(--color-purple-highlight) !important;
   color: var(--color-primary) !important;
   font-weight: 600 !important;
   border-left: 3px solid var(--color-primary) !important;
-  border-radius: 4px !important;
 }
 
 /* Ensure hover doesn't add backgrounds to non-active items */
@@ -166,4 +166,13 @@ a[href*="dashboard"],
   padding: 8px 16px !important;
   border-radius: 6px !important;
   font-weight: 500 !important;
+}
+
+/* Dashboard button hover - stay purple */
+a[href*="vercel"]:hover,
+a[href*="dashboard"]:hover,
+[class*="TopbarCta"]:hover,
+[class*="topbar-cta"]:hover {
+  background-color: oklch(0.50 0.25 290) !important;
+  color: white !important;
 }
