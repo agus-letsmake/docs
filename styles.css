@@ -21,13 +21,42 @@ body {
   color: var(--color-text);
 }
 
-/* Primary purple for links and buttons */
-a:not([href*="vercel"]):not([href*="poc-test"]) {
+/* Only apply purple to content links, not navigation */
+article a,
+main a:not([href*="vercel"]):not([href*="poc-test"]),
+.prose a,
+p a {
   color: var(--color-primary);
 }
 
-a:not([href*="vercel"]):not([href*="poc-test"]):hover {
-  color: oklch(0.50 0.25 290); /* Slightly darker on hover */
+article a:hover,
+main a:not([href*="vercel"]):not([href*="poc-test"]):hover,
+.prose a:hover,
+p a:hover {
+  color: oklch(0.50 0.25 290);
+}
+
+/* Top navigation tabs - black text */
+header a,
+[role="tablist"] a,
+[role="tab"],
+nav > a,
+[class*="Topbar"] a,
+[class*="topbar"] a,
+[class*="tabs"] a,
+[class*="Tab"],
+.nav-tabs-item,
+[class*="nav-tabs-item"],
+a.nav-tabs-item {
+  color: var(--color-text) !important;
+}
+
+[class*="tabs"] a:hover,
+header a:hover,
+[role="tab"]:hover,
+.nav-tabs-item:hover,
+[class*="nav-tabs-item"]:hover {
+  color: var(--color-text) !important;
 }
 
 /* Buttons */
@@ -59,11 +88,6 @@ nav {
   background-color: var(--color-primary-light);
 }
 
-/* Accent backgrounds */
-[class*="accent"],
-[class*="highlight"] {
-  background-color: var(--color-accent);
-}
 
 /* Code blocks - remove highlight/background */
 pre,
@@ -82,8 +106,15 @@ code:not(pre code) {
 
 /* Ensure black text throughout */
 h1, h2, h3, h4, h5, h6,
-p, span, div {
-  color: var(--color-text);
+p, span, div, li {
+  color: var(--color-text) !important;
+}
+
+/* Sidebar navigation links - black text */
+aside a,
+nav a:not(.text-primary),
+[class*="sidebar"] a:not(.text-primary) {
+  color: var(--color-text) !important;
 }
 
 /* Navigation section titles */
@@ -92,6 +123,20 @@ nav h3,
 nav h4 {
   color: var(--color-text) !important;
   font-weight: 600 !important;
+}
+
+/* Sidebar group headers - no background */
+.sidebar-group-header,
+[class*="sidebar-group-header"] {
+  background-color: transparent !important;
+  color: var(--color-text) !important;
+}
+
+/* Non-selected sidebar items - no background */
+.group.text-gray-700,
+[class*="text-gray-700"].group,
+.group:not(.text-primary) {
+  background-color: transparent !important;
 }
 
 /* Highlight ONLY the active sidebar item (has both bg-primary/10 AND text-primary) */
