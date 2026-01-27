@@ -165,4 +165,5 @@ nav img[src*="makelogo"] {
   object-fit: contain !important;
   transform: scale(1.5);
   transform-origin: left center;
+  margin-left: 0 !important;
 }
