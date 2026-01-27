@@ -119,16 +119,32 @@ nav button,
 [class*="sidebar"] button {
   background-color: transparent !important;
   border: none !important;
+  font-weight: normal !important;
 }
 
 /* ONLY highlight the currently selected/active navigation item */
 nav a[aria-current="page"],
 [aria-current="page"],
 .active-page,
-[data-active="true"] {
+[data-active="true"],
+[class*="sidebar"] a[aria-current="page"],
+[class*="NavigationItem"][data-active="true"] {
   background-color: var(--color-accent) !important;
   border-left: 3px solid var(--color-primary) !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
+  color: var(--color-primary) !important;
+}
+
+/* Ensure method icons are visible */
+nav a[aria-current="page"] [class*="icon"],
+nav a[aria-current="page"] [class*="method"],
+nav a[aria-current="page"] span[class*="badge"],
+[aria-current="page"] [class*="icon"],
+[aria-current="page"] [class*="method"],
+[aria-current="page"] span[class*="badge"] {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Ensure hover doesn't add backgrounds */
