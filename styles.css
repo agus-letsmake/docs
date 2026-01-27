@@ -132,11 +132,18 @@ nav h4 {
   color: var(--color-text) !important;
 }
 
-/* Non-selected sidebar items - no background */
-.group.text-gray-700,
-[class*="text-gray-700"].group,
-.group:not(.text-primary) {
+/* All sidebar items - transparent by default */
+.sidebar-group a,
+[class*="sidebar-group"] a,
+ul.sidebar-group a {
   background-color: transparent !important;
+}
+
+/* ONLY selected sidebar item gets purple background */
+.sidebar-group a.bg-primary\/10,
+[class*="sidebar-group"] a.bg-primary\/10,
+a.bg-primary\/10.text-primary {
+  background-color: var(--color-purple-highlight) !important;
 }
 
 /* Highlight ONLY the active sidebar item (has both bg-primary/10 AND text-primary) */
@@ -180,10 +187,16 @@ a[href*="poc-test"] {
   visibility: visible !important;
   opacity: 1 !important;
   background-color: var(--color-primary) !important;
-  color: white !important;
+  color: #ffffff !important;
   padding: 8px 16px !important;
   border-radius: 6px !important;
   font-weight: 500 !important;
+}
+
+/* Dashboard button text - ensure white */
+a[href*="vercel"] *,
+a[href*="poc-test"] * {
+  color: #ffffff !important;
 }
 
 /* Dashboard button hover - stay purple, slightly darker */
