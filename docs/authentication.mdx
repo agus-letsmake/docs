@@ -22,14 +22,10 @@ curl -X GET https://testlab.letsmake.com/api/test-cases \
   -H "X-Project-Id: your-project-id"
 ```
 
-<img
-  src="/images/screenshots/settings-keys.png"
-  alt="Project API Keys settings with CI usage example"
-/>
+<img src="/images/screenshots/settings-keys.png" alt="Project API Keys settings with CI usage example" />
 
 <Warning>
-  Never commit API keys. Prefer repository secrets and CLI init for local
-  `.env`.
+  Never commit API keys. Prefer repository secrets and CLI init for local `.env`.
 </Warning>
 
 ### Key format
@@ -47,10 +43,10 @@ Used by the web app after Google sign-in. Not the preferred path for CI.
 
 ## CLI credentials vs CI keys
 
-| Credential       | Created by          | Stored where             | Used for         |
-| ---------------- | ------------------- | ------------------------ | ---------------- |
-| User CLI session | `testlab login`     | User-level CLI store     | `testlab init`   |
-| CI API key       | `testlab init` / UI | `TESTLAB_API_KEY` in env | Reporters / curl |
+| Credential | Created by | Stored where | Used for |
+| --- | --- | --- | --- |
+| User CLI session | `testlab login` | User-level CLI store | `testlab init` |
+| CI API key | `testlab init` / UI | `TESTLAB_API_KEY` in env | Reporters / curl |
 
 See [CLI login + init](/docs/cli-sdk/cli-login-init) and [Reporting env](/docs/concepts/reporting-env).
 
@@ -64,5 +60,4 @@ https://testlab.letsmake.com/api
 ```bash Development
 http://localhost:3000/api
 ```
-
 </CodeGroup>
