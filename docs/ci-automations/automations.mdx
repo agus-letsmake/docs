@@ -7,18 +7,19 @@ TestLab can connect a GitHub App and dispatch workflows for a project.
 
 ## UI entry points
 
-- Sidebar / hub: `/automations`
-- Project settings: **Project → Automation**
+- **Runs** (`/executions`) — filter Automated, use **Run CI** when preflight is ready
+- Project settings: **Project → Automation** (GitHub connect + suite mappings)
+- Legacy `/automations` redirects to `/executions?kind=automated`
 
 ## Typical flow
 
 1. Install / authorize the GitHub App for the target org/repo
-2. Configure mappings (suite ↔ workflow)
-3. Trigger from the Automations UI or Run CI affordances
+2. Configure mappings (suite ↔ workflow) under Project → Automation
+3. Trigger from **Run CI** on Runs (editor+; preflight must be ready)
 4. Results report back via the SDK using project API keys
 
-API routes (Observed; OpenAPI sync in progress): `/api/automations/*`
-(integrations, mappings, trigger, batches, preflight, GitHub callback).
+API routes are documented in the synced OpenAPI (`/api/automations/*`:
+integrations, mappings, trigger, batches, preflight, GitHub callback).
 
 ## Related
 
