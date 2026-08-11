@@ -1,0 +1,24 @@
+---
+title: Portable Catalog
+description: "JSON shape for bulk case import with automation keys"
+---
+
+A **Portable Catalog** is the JSON shape for bulk case (and optional suite)
+import. Every case requires an `automationKey`.
+
+Accepted shapes:
+
+- An array of cases, or
+- `{ "testCases": [...], "testSuites": [...] }`
+
+Import happens in the **Cases** UI (**Import / Export**), not inside CLI init.
+
+<Warning>
+  Do not invent ad-hoc import JSON without automation keys. Do not refer to this
+  as a "Bootstrap catalog".
+</Warning>
+
+## Related
+
+- [Cases UI](/docs/web-app/cases)
+- [API import](/docs/api-reference/data/import)

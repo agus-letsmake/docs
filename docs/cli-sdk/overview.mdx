@@ -1,0 +1,26 @@
+---
+title: CLI & SDK overview
+description: "Setup-only CLI plus Client and Playwright packages"
+---
+
+| Package                             | Role                                                   |
+| ----------------------------------- | ------------------------------------------------------ |
+| `@ovenbits/make-testlab-playwright` | Playwright adapter + `testlab` CLI (`login` / `init`)  |
+| `@ovenbits/make-testlab-client`     | Shared reporting brain (start/push/complete, evidence) |
+
+Install from GitHub Packages (see each package README for `.npmrc` auth):
+
+```bash
+npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
+```
+
+<Warning>
+  Do **not** use the retired name `make-testlab-playwright-reporter`.
+</Warning>
+
+## Path
+
+1. [CLI login + init](/docs/cli-sdk/cli-login-init)
+2. Import catalog in the [Cases UI](/docs/web-app/cases)
+3. [Playwright reporter](/docs/cli-sdk/playwright) for day-to-day runs
+4. Or call the [Client](/docs/cli-sdk/client) from a non-Playwright runner

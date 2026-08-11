@@ -1,0 +1,26 @@
+---
+title: GitHub Actions reporting
+description: "Push Playwright results to TestLab from CI"
+---
+
+## Pattern
+
+1. Store `TESTLAB_URL`, `TESTLAB_API_KEY`, `TESTLAB_PROJECT_ID` as repository secrets
+2. Set `TESTLAB_PUSH=1` for reporting jobs
+3. Install packages and register `@ovenbits/make-testlab-playwright`
+4. Optionally set `TESTLAB_DEFER_COMPLETE=1` and complete/reconcile in a cleanup step
+
+```yaml
+- name: Run Playwright
+  env:
+    TESTLAB_URL: ${{ secrets.TESTLAB_URL }}
+    TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+    TESTLAB_PROJECT_ID: ${{ secrets.TESTLAB_PROJECT_ID }}
+    TESTLAB_PUSH: "1"
+  run: npx playwright test
+```
+
+<Info>
+  Prefer the Playwright SDK path over legacy Jest JSON converter scripts. See
+  also the refreshed [CI/CD guide](/docs/guides/ci-cd-integration).
+</Info>

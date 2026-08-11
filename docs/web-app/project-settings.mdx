@@ -1,0 +1,28 @@
+---
+title: Project settings
+description: "General, members, API keys, and automation"
+---
+
+Under **Project** in the sidebar:
+
+| Page       | Purpose                       |
+| ---------- | ----------------------------- |
+| General    | Project name / metadata       |
+| Members    | Invite and roles              |
+| API Keys   | Create project-scoped CI keys |
+| Automation | GitHub App / workflow wiring  |
+
+## API Keys
+
+<img
+  src="/images/screenshots/settings-keys.png"
+  alt="Project API Keys empty state with CI curl example"
+/>
+
+Create a key, copy it once, and store it in your CI secret store. Always send
+`X-Project-Id` with project-scoped keys.
+
+## Related
+
+- [API key concept](/docs/concepts/api-key)
+- [Automations](/docs/ci-automations/automations)

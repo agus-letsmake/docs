@@ -2,9 +2,11 @@ openapi: 3.0.3
 info:
   title: TestLab API
   description: |
-    TestLab is a comprehensive test management system with support for manual and automated test execution.
+    TestLab is a test management product with support for manual and automated test execution.
 
-    This API provides endpoints for managing test cases, test suites, executions, and integrating automated test results from CI/CD pipelines.
+    Prefer the published SDKs for CI reporting:
+    - `@ovenbits/make-testlab-playwright` (Playwright adapter + setup CLI)
+    - `@ovenbits/make-testlab-client` (shared reporting brain)
 
     ## Authentication
 
@@ -12,11 +14,13 @@ info:
     - **API Key**: Use the `X-API-Key` header with your generated API key (recommended for CI/CD)
     - **Bearer Token**: Use the `Authorization` header with a Firebase ID token (for user sessions)
 
+    Project-scoped requests should also include `X-Project-Id` (project id or slug).
+
     ## Base URL
 
     Production: `https://testlab.letsmake.com`
     Development: `http://localhost:3000`
-  version: 1.0.0
+  version: 1.1.0
   contact:
     name: TestLab Support
     email: support@letsmake.com
@@ -46,6 +50,10 @@ tags:
     description: Import and export test data
   - name: Reports
     description: Generate test reports
+  - name: Projects
+    description: List and manage projects
+  - name: Evidence
+    description: Observed evidence ingest and artifacts
 
 paths:
   /api/test-cases:
@@ -854,6 +862,97 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /api/projects:
+    get:
+      summary: List projects
+      description: List projects visible to the authenticated user. Observed.
+      operationId: listProjects
+      tags:
+        - Projects
+      parameters:
+        - $ref: "#/components/parameters/ProjectIdHeader"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    slug:
+                      type: string
+                    role:
+                      type: string
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /api/automated-results/start:
+    post:
+      summary: Start an automated execution
+      description: |
+        Creates an execution for SDK reporters (`startExecution` in
+        `@ovenbits/make-testlab-client`). Observed; schemas may evolve.
+      operationId: startAutomatedExecution
+      tags:
+        - Automated Results
+      parameters:
+        - $ref: "#/components/parameters/ProjectIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                suiteId:
+                  type: string
+                name:
+                  type: string
+                environment:
+                  type: string
+      responses:
+        "200":
+          description: Execution started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executionId:
+                    type: string
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /api/evidence/v1/ingest:
+    post:
+      summary: Ingest observed case attempt
+      description: |
+        Ingest observed steps / walkthrough metadata for a result.
+        Used by Client `ingestCaseAttempt`. Observed.
+      operationId: ingestEvidenceAttempt
+      tags:
+        - Evidence
+      parameters:
+        - $ref: "#/components/parameters/ProjectIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Ingest accepted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -868,6 +967,14 @@ components:
       description: Firebase ID token for user authentication
 
   parameters:
+    ProjectIdHeader:
+      name: X-Project-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Project id or slug (required for project-scoped API keys)
+
     TestCaseId:
       name: id
       in: path

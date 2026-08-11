@@ -1,0 +1,21 @@
+---
+title: Compare executions
+description: "Diff two runs to spot regressions"
+---
+
+Open **`/executions/compare`** (or use compare entry points from Runs) to select
+two executions and review differences in case outcomes.
+
+```mermaid
+flowchart LR
+  A[Pick baseline run] --> C[Compare view]
+  B[Pick candidate run] --> C
+  C --> D[Inspect status deltas]
+```
+
+Use compare after a nightly or release train to find new failures without reading
+the full case list on each run.
+
+## Related
+
+- [Runs](/docs/web-app/runs)
