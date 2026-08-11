@@ -14,7 +14,10 @@ export default defineConfig({
   use: {
     screenshot: "on", // needed for Observed evidence screenshots
   },
-  reporter: [["list"], ["@ovenbits/make-testlab-playwright"]],
+  reporter: [
+    ["list"],
+    ["@ovenbits/make-testlab-playwright"],
+  ],
 });
 ```
 

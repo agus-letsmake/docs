@@ -2,30 +2,23 @@ openapi: 3.0.3
 info:
   title: TestLab API
   description: |
-    TestLab is a comprehensive test management system with support for manual and automated test execution.
+    TestLab is a test management product with support for manual and automated test execution.
 
-    This API provides endpoints for managing test cases, test suites, executions, and integrating automated test results from CI/CD pipelines.
+    Prefer the published SDKs for CI reporting:
+    - `@ovenbits/make-testlab-playwright` (Playwright adapter + setup CLI)
+    - `@ovenbits/make-testlab-client` (shared reporting brain)
 
     ## Authentication
 
-    Most API endpoints require authentication using one of two methods:
+    All API endpoints require authentication using one of two methods:
     - **API Key**: Use the `X-API-Key` header with your generated API key (recommended for CI/CD)
     - **Bearer Token**: Use the `Authorization` header with a Firebase ID token (for user sessions)
 
-    Exceptions are documented per operation: `/api/automations/github/callback` is called by GitHub,
-    `/api/cron/reconcile-executions` uses a cron secret, `/api/dev/session` uses a development secret,
-    and `/api/cli/device/code` plus `/api/cli/device/token` are unauthenticated device-login endpoints
-    (the CLI proves possession of the `deviceCode`).
-
-    ## Project scoping
-
-    Project-scoped endpoints resolve the active project from the optional `X-Project-Id` header.
-    When the header is absent, the server falls back to the caller's oldest project membership.
-    Machine clients should always send `X-Project-Id` explicitly.
+    Project-scoped requests should also include `X-Project-Id` (project id or slug).
 
     ## Base URL
 
-    Production: `https://poc-test-management.vercel.app`
+    Production: `https://testlab.letsmake.com`
     Development: `http://localhost:3000`
   version: 1.1.0
   contact:
@@ -33,7 +26,7 @@ info:
     email: support@letsmake.com
 
 servers:
-  - url: https://poc-test-management.vercel.app
+  - url: https://testlab.letsmake.com
     description: Production server
   - url: http://localhost:3000
     description: Development server
@@ -51,150 +44,45 @@ tags:
     description: Manage test execution runs
   - name: Automated Results
     description: Push results from automated test runners (CI/CD)
-  - name: Automations
-    description: GitHub App install, suite trigger batches, and preflight
-  - name: Automation Integrations
-    description: Provider integrations used to dispatch automated runs
-  - name: Automation Mappings
-    description: Suite-to-integration dispatch mappings
-  - name: Projects
-    description: Project records and settings
-  - name: Members
-    description: Project membership and roles
   - name: API Keys
     description: Manage API keys for authentication
-  - name: Attachments
-    description: Evidence attached to test cases and execution results
-  - name: Evidence
-    description: |
-      Attempt-scoped observed evidence (`/api/evidence/v1/*`): immutable case attempts,
-      ordered steps, and step screenshot artifacts used by the walkthrough UI and SDK.
-  - name: Audit
-    description: Audit log reads
-  - name: Statistics
-    description: Aggregated pass-rate trends and flaky test detection
   - name: Data Management
     description: Import and export test data
   - name: Reports
     description: Generate test reports
-  - name: Auth
-    description: User session bootstrap
-  - name: CLI
-    description: Setup CLI device login (browser device flow)
-  - name: Development
-    description: Local development helpers, disabled in production
-  - name: Cron
-    description: Scheduled maintenance jobs
-  - name: Quality API v1
-    description: |
-      Versioned machine surface under `/api/quality/v1/`.
-
-      Foundation scaffold: `GET /api/quality/v1/context` is implemented using existing
-      ApiKey authentication and strict `X-Project-Id`. MachineClient credentials and
-      fine-grained scopes are deferred (MCP Task 3 — schema approval). Shared component
-      schemas (`QualityV1*`) remain the contract source of truth for the MCP adapter.
-      See `research/mcp-server/architecture.md`.
+  - name: Projects
+    description: List and manage projects
+  - name: Evidence
+    description: Observed evidence ingest and artifacts
 
 paths:
-  /api/quality/v1/context:
-    get:
-      summary: Get bound quality API project context
-      description: |
-        Returns project metadata, effective membership role, ApiKey credential scope
-        (`global` | `project`), and the quality API version for the authenticated caller.
-
-        Requires `X-Project-Id`. Does not fall back to the caller's oldest membership.
-        `machineScopes` is always an empty array until MachineClient credentials ship
-        (MCP Task 3). Not a product-launch MCP surface — foundation only.
-      operationId: getQualityV1Context
-      tags:
-        - Quality API v1
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: X-Request-Id
-          in: header
-          required: false
-          schema:
-            $ref: "#/components/schemas/QualityV1RequestId"
-          description: Optional client correlation id; echoed when it matches the safe pattern
-      responses:
-        "200":
-          description: Bound project context
-          headers:
-            X-Request-Id:
-              schema:
-                $ref: "#/components/schemas/QualityV1RequestId"
-              description: Correlation id also present in the response body
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QualityV1ProjectContext"
-        "400":
-          description: Missing or blank X-Project-Id
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QualityV1ErrorResponse"
-        "401":
-          description: Authentication failed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QualityV1ErrorResponse"
-        "403":
-          description: Project access denied, archived, or API key project scope mismatch
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QualityV1ErrorResponse"
-        "500":
-          description: Upstream failure
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/QualityV1ErrorResponse"
-
   /api/test-cases:
     get:
-      summary: List test cases
-      description: |
-        Returns a paginated envelope, not a bare array. `limit` is clamped to 1-100 and defaults to 50.
+      summary: List all test cases
+      description: Retrieve a list of all test cases in the system
       operationId: listTestCases
       tags:
         - Test Cases
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - $ref: "#/components/parameters/PageQuery"
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 50
-          description: Page size, clamped server-side to 1-100
       responses:
         "200":
-          description: Paginated test cases
+          description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TestCaseListPage"
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestCase"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
     post:
-      summary: Create a test case
+      summary: Create a new test case
+      description: Create a new test case with steps and metadata
       operationId: createTestCase
       tags:
         - Test Cases
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
@@ -203,73 +91,66 @@ paths:
               $ref: "#/components/schemas/TestCaseInput"
       responses:
         "201":
-          description: Created test case
+          description: Test case created successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestCase"
         "400":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/test-cases/{id}:
     get:
-      summary: Get a test case
+      summary: Get a test case by ID
+      description: Retrieve detailed information about a specific test case
       operationId: getTestCase
       tags:
         - Test Cases
       parameters:
         - $ref: "#/components/parameters/TestCaseId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       responses:
         "200":
-          description: Test case
+          description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestCase"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
     put:
-      summary: Replace a test case
-      description: Full update. `title` is required even though every other field is optional.
+      summary: Update a test case
+      description: Update an existing test case
       operationId: updateTestCase
       tags:
         - Test Cases
       parameters:
         - $ref: "#/components/parameters/TestCaseId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TestCaseUpdateInput"
+              $ref: "#/components/schemas/TestCaseInput"
       responses:
         "200":
-          description: Updated test case
+          description: Test case updated successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestCase"
         "400":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -277,107 +158,53 @@ paths:
 
     delete:
       summary: Delete a test case
+      description: Delete a test case by ID
       operationId: deleteTestCase
       tags:
         - Test Cases
       parameters:
         - $ref: "#/components/parameters/TestCaseId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       responses:
         "200":
-          description: Deleted
+          description: Test case deleted successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/test-cases/resolve:
-    get:
-      summary: Resolve automation keys to test case IDs
-      description: |
-        Supply either `automationKey` (single) or `automationKeys` (comma-separated).
-        Keys that do not resolve are reported in `missing` with `found: false`.
-      operationId: resolveAutomationKeys
-      tags:
-        - Test Cases
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: automationKey
-          in: query
-          required: false
-          schema:
-            type: string
-          description: A single automation key
-        - name: automationKeys
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Comma-separated automation keys
-      responses:
-        "200":
-          description: Resolution result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationKeyResolution"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
   /api/test-suites:
     get:
-      summary: List test suites
-      description: Returns a paginated envelope, not a bare array. `limit` is clamped to 1-100 and defaults to 50.
+      summary: List all test suites
+      description: Retrieve a list of all test suites
       operationId: listTestSuites
       tags:
         - Test Suites
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - $ref: "#/components/parameters/PageQuery"
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 50
-          description: Page size, clamped server-side to 1-100
       responses:
         "200":
-          description: Paginated test suites
+          description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TestSuiteListPage"
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestSuite"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
     post:
-      summary: Create a test suite
+      summary: Create a new test suite
+      description: Create a new test suite with test cases
       operationId: createTestSuite
       tags:
         - Test Suites
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
@@ -386,40 +213,36 @@ paths:
               $ref: "#/components/schemas/TestSuiteInput"
       responses:
         "201":
-          description: Created test suite
+          description: Test suite created successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestSuite"
         "400":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/test-suites/{id}:
     get:
-      summary: Get a test suite
+      summary: Get a test suite by ID
+      description: Retrieve detailed information about a specific test suite
       operationId: getTestSuite
       tags:
         - Test Suites
       parameters:
         - $ref: "#/components/parameters/TestSuiteId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       responses:
         "200":
-          description: Test suite
+          description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestSuite"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -427,31 +250,29 @@ paths:
 
     put:
       summary: Update a test suite
+      description: Update an existing test suite
       operationId: updateTestSuite
       tags:
         - Test Suites
       parameters:
         - $ref: "#/components/parameters/TestSuiteId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TestSuiteUpdateInput"
+              $ref: "#/components/schemas/TestSuiteInput"
       responses:
         "200":
-          description: Updated test suite
+          description: Test suite updated successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestSuite"
         "400":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -459,139 +280,46 @@ paths:
 
     delete:
       summary: Delete a test suite
+      description: Delete a test suite by ID
       operationId: deleteTestSuite
       tags:
         - Test Suites
       parameters:
         - $ref: "#/components/parameters/TestSuiteId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       responses:
         "200":
-          description: Deleted
+          description: Test suite deleted successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/test-suites/{id}/test-cases:
-    put:
-      summary: Replace suite membership
-      description: Replaces the full set of test cases in the suite.
-      operationId: replaceSuiteTestCases
+    get:
+      summary: Get test cases in a suite
+      description: Retrieve all test cases that belong to a specific test suite
+      operationId: getTestSuiteTestCases
       tags:
         - Test Suites
       parameters:
         - $ref: "#/components/parameters/TestSuiteId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - testCaseIds
-              properties:
-                testCaseIds:
-                  type: array
-                  items:
-                    type: string
       responses:
         "200":
-          description: Membership replaced
+          description: Successful response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  testCaseIds:
-                    type: array
-                    items:
-                      type: string
-        "400":
-          $ref: "#/components/responses/BadRequestError"
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestCase"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Add one test case to a suite
-      operationId: addSuiteTestCase
-      tags:
-        - Test Suites
-      parameters:
-        - $ref: "#/components/parameters/TestSuiteId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - testCaseId
-              properties:
-                testCaseId:
-                  type: string
-      responses:
-        "200":
-          description: Added
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    delete:
-      summary: Remove one test case from a suite
-      operationId: removeSuiteTestCase
-      tags:
-        - Test Suites
-      parameters:
-        - $ref: "#/components/parameters/TestSuiteId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: testCaseId
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Removed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -599,50 +327,31 @@ paths:
 
   /api/executions:
     get:
-      summary: List executions
-      description: Returns a paginated envelope, not a bare array. `limit` is clamped to 1-100 and defaults to 20.
+      summary: List all executions
+      description: Retrieve a list of all test execution runs
       operationId: listExecutions
       tags:
         - Executions
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - $ref: "#/components/parameters/PageQuery"
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-          description: Page size, clamped server-side to 1-100
-        - name: suiteId
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter executions by originating suite
       responses:
         "200":
-          description: Paginated executions
+          description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TestExecutionListPage"
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestExecution"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
     post:
-      summary: Create a manual execution
+      summary: Create a new execution
+      description: Create a new test execution run for a test suite
       operationId: createExecution
       tags:
         - Executions
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
@@ -651,40 +360,36 @@ paths:
               $ref: "#/components/schemas/TestExecutionInput"
       responses:
         "201":
-          description: Created execution
+          description: Test execution created successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestExecution"
         "400":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/executions/{id}:
     get:
-      summary: Get an execution
+      summary: Get an execution by ID
+      description: Retrieve detailed information about a specific test execution
       operationId: getExecution
       tags:
         - Executions
       parameters:
         - $ref: "#/components/parameters/ExecutionId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       responses:
         "200":
-          description: Execution with results
+          description: Successful response
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestExecution"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -692,24 +397,35 @@ paths:
 
     put:
       summary: Update an execution
-      description: |
-        Partial update despite the `PUT` verb. Only supplied fields are written.
-        Setting `status` to `completed` stamps `completedAt`; setting it back to `in_progress` clears it.
+      description: Update an existing test execution (e.g., mark as completed)
       operationId: updateExecution
       tags:
         - Executions
       parameters:
         - $ref: "#/components/parameters/ExecutionId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TestExecutionUpdateInput"
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [in_progress, completed]
+                  description: Execution status
+                name:
+                  type: string
+                  description: Execution name
+                version:
+                  type: string
+                  description: Build/release version
+                environment:
+                  type: string
+                  description: Environment name
       responses:
         "200":
-          description: Updated execution
+          description: Execution updated successfully
           content:
             application/json:
               schema:
@@ -718,8 +434,6 @@ paths:
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -727,178 +441,156 @@ paths:
 
     delete:
       summary: Delete an execution
+      description: Delete a test execution by ID
       operationId: deleteExecution
       tags:
         - Executions
       parameters:
         - $ref: "#/components/parameters/ExecutionId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       responses:
         "200":
-          description: Deleted
+          description: Execution deleted successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/executions/{id}/results:
-    put:
-      summary: Record one manual test result
-      description: |
-        Upserts a single manual result inside an execution. The handler exports `PUT` only;
-        earlier revisions of this document described a `POST`, which was never implemented.
-      operationId: recordExecutionResult
+    post:
+      summary: Update execution results
+      description: Update test results for a specific execution (manual execution)
+      operationId: updateExecutionResults
       tags:
         - Executions
       parameters:
         - $ref: "#/components/parameters/ExecutionId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TestExecutionResultInput"
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestExecutionResultInput"
       responses:
         "200":
-          description: Recorded result
+          description: Results updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RecordedExecutionResult"
+                $ref: "#/components/schemas/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/executions/automated:
-    get:
-      summary: List automated execution summaries
-      description: Returns a bare array. Used by the composite-report picker.
-      operationId: listAutomatedExecutions
-      tags:
-        - Executions
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: suiteId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 20
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [in_progress, completed]
-      responses:
-        "200":
-          description: Automated execution summaries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AutomatedExecutionSummary"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/executions/counts:
-    get:
-      summary: Get execution counts
-      description: Counts for the sidebar filters in the current project.
-      operationId: getExecutionCounts
-      tags:
-        - Executions
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Execution counts
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExecutionCounts"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
   /api/automated-results:
     post:
-      summary: Report automated test results
-      operationId: reportAutomatedResults
+      summary: Push automated test results
+      description: |
+        Push test results from automated test runners (Jest, Cypress, etc.).
+        This endpoint can either create a new execution or update an existing one.
+
+        **Creating a new execution:**
+        - Provide `suiteId` to create a new execution for that suite
+        - Optionally provide `name`, `version`, and `environment`
+        - All test cases in the suite will be initialized with 'todo' status
+
+        **Updating an existing execution:**
+        - Provide `executionId` to update an existing execution
+        - Results will be updated or created as needed
+
+        **Step Results:**
+        - Step results are automatically generated based on test status
+        - If test passes, all steps are marked as passed
+        - If test fails, all steps are marked as failed
+
+        **Auto-completion:**
+        - Set `autoComplete: true` to automatically mark execution as completed when all tests are done
+      operationId: pushAutomatedResults
       tags:
         - Automated Results
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/AutomatedResultsInput"
+            examples:
+              createNewExecution:
+                summary: Create new execution
+                value:
+                  suiteId: clx123abc
+                  name: "CI Run - Sprint 5"
+                  version: "v1.2.3"
+                  environment: "staging"
+                  autoComplete: true
+                  results:
+                    - testCaseId: tc-001-login-valid
+                      status: pass
+                      duration: 234
+                    - testCaseId: tc-002-login-invalid
+                      status: pass
+                      duration: 156
+                    - testCaseId: tc-005-add-to-cart
+                      status: fail
+                      duration: 890
+                      errorMessage: "Expected cart count to be 1, but got 0"
+              updateExistingExecution:
+                summary: Update existing execution
+                value:
+                  executionId: exec123abc
+                  results:
+                    - testCaseId: tc-001-login-valid
+                      status: pass
+                      duration: 234
       responses:
         "200":
-          description: Ingestion summary
+          description: Results processed successfully
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AutomatedResultsResponse"
         "400":
-          $ref: "#/components/responses/ValidationError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
     get:
-      summary: Read execution results for CI
+      summary: Get execution results
+      description: Retrieve results for a specific execution (useful for CI/CD to check test status)
       operationId: getAutomatedResults
       tags:
         - Automated Results
       parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
         - name: executionId
           in: query
           required: true
           schema:
             type: string
+          description: The execution ID to retrieve results for
       responses:
         "200":
-          description: Execution results
+          description: Successful response
           content:
             application/json:
               schema:
@@ -907,766 +599,6 @@ paths:
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automated-results/start:
-    post:
-      summary: Start an automated execution
-      description: Creates (or resumes) an automated execution and seeds `todo` results.
-      operationId: startAutomatedExecution
-      tags:
-        - Automated Results
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AutomatedResultsStartInput"
-      responses:
-        "200":
-          description: Started execution
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomatedResultsStartResponse"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automated-results/reconcile:
-    post:
-      summary: Reconcile stale automated executions
-      description: |
-        Closes automated executions that stopped reporting. With `executionId` and `force: true`
-        the stale-window check is skipped so CI can close a known orphan immediately.
-      operationId: reconcileAutomatedResults
-      tags:
-        - Automated Results
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AutomatedResultsReconcileInput"
-      responses:
-        "200":
-          description: Reconciliation summary
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomatedResultsReconcileResponse"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/trigger:
-    post:
-      summary: Trigger an automation batch
-      description: |
-        Dispatches one GitHub Actions workflow run per requested workflow. The request field is
-        `workflowIds`, not `suiteIds`.
-      operationId: triggerAutomationBatch
-      tags:
-        - Automations
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AutomationTriggerInput"
-      responses:
-        "201":
-          description: Batch dispatched
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationBatchRun"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/preflight:
-    get:
-      summary: Check automation readiness
-      operationId: automationPreflight
-      tags:
-        - Automations
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Preflight result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationPreflightResult"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/batches:
-    get:
-      summary: List automation batches
-      description: Returns `{ data }` without pagination metadata. `limit` is clamped to 1-50 and defaults to 10.
-      operationId: listAutomationBatches
-      tags:
-        - Automations
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 50
-            default: 10
-      responses:
-        "200":
-          description: Recent batches
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/AutomationBatchRun"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/batches/{id}:
-    get:
-      summary: Get an automation batch
-      operationId: getAutomationBatch
-      tags:
-        - Automations
-      parameters:
-        - $ref: "#/components/parameters/BatchId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Batch with items
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationBatchRun"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/batches/{id}/retry:
-    post:
-      summary: Retry failed batch items
-      description: Takes no request body. Retries every failed item in the batch.
-      operationId: retryAutomationBatch
-      tags:
-        - Automations
-      parameters:
-        - $ref: "#/components/parameters/BatchId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Batch after retry, with retry counters
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationBatchRetryResult"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/github/callback:
-    get:
-      summary: GitHub App installation callback
-      description: |
-        Called by GitHub after an App installation. Always responds with a redirect to the
-        project automation settings page; it never returns JSON. Not authenticated by
-        `X-API-Key` or a bearer token — the `state` query parameter carries the project ID.
-      operationId: githubInstallCallback
-      tags:
-        - Automations
-      security: []
-      parameters:
-        - name: installation_id
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: state
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Project ID passed through the installation flow
-        - name: setup_action
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "307":
-          description: Redirect to the project automation settings page
-          headers:
-            Location:
-              schema:
-                type: string
-
-  /api/automations/integrations:
-    get:
-      summary: List automation integrations
-      description: |
-        With `installUrl=1` this returns a GitHub App install URL instead of the integration list.
-        That variant requires the `owner` role and a configured GitHub App.
-      operationId: listAutomationIntegrations
-      tags:
-        - Automation Integrations
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: installUrl
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: ["1"]
-          description: When `1`, return an install URL payload instead of the integration list
-      responses:
-        "200":
-          description: Integration list, or install URL when `installUrl=1`
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - $ref: "#/components/schemas/AutomationIntegrationList"
-                  - $ref: "#/components/schemas/GitHubInstallUrlResponse"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailableError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Create or bind an automation integration
-      description: |
-        Accepts either a full integration definition or a GitHub repository binding.
-        Binding an existing GitHub integration updates it in place and returns `200`.
-      operationId: createAutomationIntegration
-      tags:
-        - Automation Integrations
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - $ref: "#/components/schemas/AutomationIntegrationInput"
-                - $ref: "#/components/schemas/GitHubRepoBindingInput"
-      responses:
-        "200":
-          description: Existing GitHub integration updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationIntegration"
-        "201":
-          description: Integration created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationIntegration"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntityError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailableError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/integrations/{id}:
-    patch:
-      summary: Update an automation integration
-      operationId: updateAutomationIntegration
-      tags:
-        - Automation Integrations
-      parameters:
-        - $ref: "#/components/parameters/IntegrationId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AutomationIntegrationUpdateInput"
-      responses:
-        "200":
-          description: Updated integration
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutomationIntegration"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    delete:
-      summary: Delete an automation integration
-      operationId: deleteAutomationIntegration
-      tags:
-        - Automation Integrations
-      parameters:
-        - $ref: "#/components/parameters/IntegrationId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Deleted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/mappings:
-    get:
-      summary: List suite automation mappings
-      description: Returns `{ data }` without pagination metadata.
-      operationId: listAutomationMappings
-      tags:
-        - Automation Mappings
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: suiteId
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Mappings
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/SuiteAutomationMapping"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Create a suite automation mapping
-      operationId: createAutomationMapping
-      tags:
-        - Automation Mappings
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SuiteAutomationMappingInput"
-      responses:
-        "201":
-          description: Created mapping
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuiteAutomationMapping"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "409":
-          $ref: "#/components/responses/ConflictError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/automations/mappings/{id}:
-    patch:
-      summary: Update a suite automation mapping
-      description: "`suiteId` and `integrationId` cannot be changed."
-      operationId: updateAutomationMapping
-      tags:
-        - Automation Mappings
-      parameters:
-        - $ref: "#/components/parameters/MappingId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SuiteAutomationMappingUpdateInput"
-      responses:
-        "200":
-          description: Updated mapping
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuiteAutomationMapping"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    delete:
-      summary: Delete a suite automation mapping
-      operationId: deleteAutomationMapping
-      tags:
-        - Automation Mappings
-      parameters:
-        - $ref: "#/components/parameters/MappingId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Deleted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/projects:
-    get:
-      summary: List projects for the caller
-      description: Returns a bare array of the caller's project memberships.
-      operationId: listProjects
-      tags:
-        - Projects
-      responses:
-        "200":
-          description: Projects
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ProjectSummary"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Create a project
-      description: |
-        Requires the global `admin` role, or the global `member` role when member project
-        creation is enabled (product default; disable with `ALLOW_MEMBER_PROJECT_CREATION=false`).
-        The caller becomes the project owner.
-      operationId: createProject
-      tags:
-        - Projects
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                  nullable: true
-      responses:
-        "201":
-          description: Created project
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectSummary"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/projects/{id}:
-    get:
-      summary: Get a project
-      operationId: getProject
-      tags:
-        - Projects
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-      responses:
-        "200":
-          description: Project detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectDetail"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    patch:
-      summary: Update a project
-      description: |
-        Owner only. Sending an `archivedAt` key with any value, including `null`, archives the
-        project with the current timestamp. This endpoint cannot unarchive a project.
-      operationId: updateProject
-      tags:
-        - Projects
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ProjectUpdateInput"
-      responses:
-        "200":
-          description: Updated project
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectDetail"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/projects/{id}/members:
-    get:
-      summary: List project members
-      description: Returns a bare array of memberships.
-      operationId: listProjectMembers
-      tags:
-        - Members
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-      responses:
-        "200":
-          description: Members
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ProjectMember"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Add a project member
-      description: Owner only. The user must already exist; `role` defaults to `editor`.
-      operationId: addProjectMember
-      tags:
-        - Members
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-              properties:
-                email:
-                  type: string
-                  format: email
-                role:
-                  $ref: "#/components/schemas/ProjectRole"
-      responses:
-        "201":
-          description: Member added
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectMember"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    patch:
-      summary: Change a member's role
-      description: Owner only. The last remaining owner cannot be demoted.
-      operationId: updateProjectMember
-      tags:
-        - Members
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - userId
-              properties:
-                userId:
-                  type: string
-                role:
-                  $ref: "#/components/schemas/ProjectRole"
-      responses:
-        "200":
-          description: Updated member
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectMember"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    delete:
-      summary: Remove a project member
-      description: Owner only. The last remaining owner cannot be removed.
-      operationId: removeProjectMember
-      tags:
-        - Members
-      parameters:
-        - $ref: "#/components/parameters/ProjectId"
-        - name: userId
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Removed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
@@ -1675,20 +607,13 @@ paths:
   /api/api-keys:
     get:
       summary: List API keys
-      description: Returns `{ apiKeys }`. Never returns the raw key material.
+      description: Retrieve all API keys for the authenticated user
       operationId: listApiKeys
       tags:
         - API Keys
-      parameters:
-        - name: projectId
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter to keys scoped to one project
       responses:
         "200":
-          description: API keys
+          description: Successful response
           content:
             application/json:
               schema:
@@ -1705,7 +630,9 @@ paths:
 
     post:
       summary: Create an API key
-      description: The plaintext key is returned exactly once, in `apiKey.key`.
+      description: |
+        Create a new API key for authentication. The full key is only returned once upon creation.
+        Save it securely as it cannot be retrieved later.
       operationId: createApiKey
       tags:
         - API Keys
@@ -1720,71 +647,42 @@ paths:
               properties:
                 name:
                   type: string
+                  description: Descriptive name for the API key (e.g., "CI Pipeline", "Jenkins")
+                  example: "GitHub Actions Pipeline"
                 expiresAt:
                   type: string
                   format: date-time
-                  nullable: true
-                projectId:
-                  type: string
-                  nullable: true
-                  description: Scopes the key to one project; omit for a global key
+                  description: Optional expiration date for the API key
       responses:
         "201":
-          description: Created key
+          description: API key created successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   apiKey:
-                    $ref: "#/components/schemas/ApiKeyWithSecret"
+                    allOf:
+                      - $ref: "#/components/schemas/ApiKey"
+                      - type: object
+                        properties:
+                          key:
+                            type: string
+                            description: The full API key (only shown once)
+                            example: "tlk_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890"
                   message:
                     type: string
+                    example: "API key created. Save this key - it will not be shown again."
         "400":
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    delete:
-      summary: Delete an API key
-      description: The key ID is supplied in the request body, not the path.
-      operationId: deleteApiKey
-      tags:
-        - API Keys
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - id
-              properties:
-                id:
-                  type: string
-      responses:
-        "200":
-          description: Deleted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SuccessResponse"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
     patch:
       summary: Update an API key
-      description: The key ID is supplied in the request body, not the path.
+      description: Update an API key (enable/disable or rename)
       operationId: updateApiKey
       tags:
         - API Keys
@@ -1799,13 +697,16 @@ paths:
               properties:
                 id:
                   type: string
-                name:
-                  type: string
+                  description: API key ID
                 isActive:
                   type: boolean
+                  description: Enable or disable the API key
+                name:
+                  type: string
+                  description: New name for the API key
       responses:
         "200":
-          description: Updated key
+          description: API key updated successfully
           content:
             application/json:
               schema:
@@ -1822,585 +723,131 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/attachments:
-    get:
-      summary: List attachments
-      description: Requires exactly one of `testCaseId` or `executionResultId`.
-      operationId: listAttachments
-      tags:
-        - Attachments
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: testCaseId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: executionResultId
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Attachments
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  attachments:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Attachment"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Register an already-uploaded attachment
-      description: |
-        Records metadata for a file the client uploaded to storage directly.
-        Use `/api/attachments/upload` to upload the bytes through TestLab instead.
-      operationId: createAttachment
-      tags:
-        - Attachments
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AttachmentInput"
-      responses:
-        "201":
-          description: Registered attachment
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  attachment:
-                    $ref: "#/components/schemas/Attachment"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/attachments/upload:
-    post:
-      summary: Upload evidence for an execution
-      operationId: uploadAttachment
-      tags:
-        - Attachments
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - file
-                - executionId
-              properties:
-                file:
-                  type: string
-                  format: binary
-                executionId:
-                  type: string
-                evidenceKind:
-                  type: string
-                  pattern: "^[a-z0-9-]{1,64}$"
-                automationKey:
-                  type: string
-                  pattern: "^[A-Z0-9-]{1,64}$"
-                retentionDays:
-                  type: integer
-      responses:
-        "201":
-          description: Uploaded attachment
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  attachment:
-                    $ref: "#/components/schemas/Attachment"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/attachments/{id}:
-    get:
-      summary: Get an attachment
-      operationId: getAttachment
-      tags:
-        - Attachments
-      parameters:
-        - $ref: "#/components/parameters/AttachmentId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Attachment
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  attachment:
-                    $ref: "#/components/schemas/Attachment"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
     delete:
-      summary: Delete an attachment
-      description: Returns the `storagePath` so the caller can delete the stored object.
-      operationId: deleteAttachment
+      summary: Delete an API key
+      description: Delete an API key by ID
+      operationId: deleteApiKey
       tags:
-        - Attachments
-      parameters:
-        - $ref: "#/components/parameters/AttachmentId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Deleted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  storagePath:
-                    type: string
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/evidence/v1/ingest:
-    post:
-      summary: Ingest an immutable case attempt with observed steps
-      description: |
-        Persists a run/case attempt and ordered step observations. Exactly one of `testCaseId`
-        or `automationKey` is required. Replaying the same `idempotencyKey` with the same
-        checksum returns the prior resource (`200` + `replayed: true`). A conflicting payload
-        for an existing key returns `409`.
-      operationId: ingestEvidenceCaseAttempt
-      tags:
-        - Evidence
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
+        - API Keys
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EvidenceIngestInput"
-      responses:
-        "200":
-          description: Idempotent replay of an existing attempt
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceIngestResponse"
-        "201":
-          description: Created attempt
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceIngestResponse"
-        "400":
-          $ref: "#/components/responses/ValidationError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "409":
-          $ref: "#/components/responses/ConflictError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/evidence/v1/results/{resultId}:
-    get:
-      summary: Get attempt/step/artifact metadata for an execution result
-      description: |
-        Returns chronological attempts, steps, and artifact metadata without binary URLs.
-        Includes `defaultAttemptId` and `defaultStepId` for walkthrough selection.
-      operationId: getEvidenceResult
-      tags:
-        - Evidence
-      parameters:
-        - $ref: "#/components/parameters/EvidenceResultId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Evidence tree for the execution result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceResultResponse"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/evidence/v1/steps/{stepId}/artifacts:
-    post:
-      summary: Upload a screenshot artifact for an observed step
-      description: |
-        Multipart upload of a step screenshot. Pilot MIME types are `image/png`, `image/jpeg`,
-        and `image/webp` (max 20 MB). Replaying the same `idempotencyKey` for the same step
-        returns the prior artifact (`200` + `replayed: true`).
-      operationId: uploadEvidenceStepArtifact
-      tags:
-        - Evidence
-      parameters:
-        - $ref: "#/components/parameters/EvidenceStepId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
               type: object
               required:
-                - file
-                - idempotencyKey
+                - id
               properties:
-                file:
+                id:
                   type: string
-                  format: binary
-                idempotencyKey:
-                  type: string
-                  minLength: 1
-                  maxLength: 500
-                captureAt:
-                  type: string
-                  format: date-time
-                  description: Optional capture timestamp
+                  description: API key ID to delete
       responses:
         "200":
-          description: Idempotent replay of an existing artifact
+          description: API key deleted successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceArtifactUploadResponse"
-        "201":
-          description: Uploaded artifact
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceArtifactUploadResponse"
+                $ref: "#/components/schemas/SuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
-        "409":
-          $ref: "#/components/responses/ConflictError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/evidence/v1/artifacts/{id}/access:
-    get:
-      summary: Get a short-lived signed URL for an evidence artifact
-      description: |
-        Returns a temporary download URL after project membership checks. Artifact records do
-        not store permanent public URLs.
-      operationId: getEvidenceArtifactAccess
-      tags:
-        - Evidence
-      parameters:
-        - $ref: "#/components/parameters/EvidenceArtifactId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Signed access URL
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceArtifactAccessResponse"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "410":
-          $ref: "#/components/responses/GoneError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailableError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/evidence/v1/artifacts/{id}/content:
-    get:
-      summary: Stream evidence artifact bytes through TestLab
-      description: |
-        Same-origin binary proxy for walkthrough progressive loading and private browser cache.
-        Prefer `/access` when a signed storage URL is sufficient.
-      operationId: getEvidenceArtifactContent
-      tags:
-        - Evidence
-      parameters:
-        - $ref: "#/components/parameters/EvidenceArtifactId"
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Artifact bytes
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "410":
-          $ref: "#/components/responses/GoneError"
-        "503":
-          $ref: "#/components/responses/ServiceUnavailableError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/audit-log:
-    get:
-      summary: Read the audit log
-      description: Returns a bare array. `limit` is clamped to at most 100 and defaults to 50.
-      operationId: listAuditLog
-      tags:
-        - Audit
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: entityId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: entityType
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            maximum: 100
-            default: 50
-      responses:
-        "200":
-          description: Audit entries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AuditLogEntry"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/stats/trends:
-    get:
-      summary: Execution pass-rate trends
-      description: Returns a bare array of recent completed executions with pass-rate rollups.
-      operationId: getExecutionTrends
-      tags:
-        - Statistics
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Trends
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ExecutionTrend"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/stats/flaky:
-    get:
-      summary: Flaky test detection
-      description: Returns a bare array, empty when there is not enough history.
-      operationId: getFlakyTests
-      tags:
-        - Statistics
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-      responses:
-        "200":
-          description: Flaky test cases
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FlakyTestCase"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/import:
     post:
       summary: Import test data
+      description: Import test cases and suites from JSON file
       operationId: importData
       tags:
         - Data Management
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ImportInput"
+              type: object
+              properties:
+                testCases:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestCaseInput"
+                testSuites:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TestSuiteInput"
       responses:
         "200":
-          description: Import summary
+          description: Data imported successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ImportResponse"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  imported:
+                    type: object
+                    properties:
+                      testCases:
+                        type: integer
+                      testSuites:
+                        type: integer
         "400":
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/export:
     get:
       summary: Export test data
-      description: |
-        `format=json` returns a JSON document as a file download. `format=csv` returns CSV and is
-        only supported for `type=test-cases` and `type=executions`.
+      description: Export all test cases and suites as JSON
       operationId: exportData
       tags:
         - Data Management
-      parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: format
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [json, csv]
-            default: json
-        - name: type
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [all, test-cases, suites, executions]
-            default: all
       responses:
         "200":
-          description: Export payload
+          description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExportDocument"
-            text/csv:
-              schema:
-                type: string
-        "400":
-          $ref: "#/components/responses/BadRequestError"
+                type: object
+                properties:
+                  testCases:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TestCase"
+                  testSuites:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TestSuite"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
   /api/reports/pdf:
     get:
-      summary: Generate an execution PDF report
-      operationId: generateExecutionReport
+      summary: Generate PDF report
+      description: Generate a PDF report for a test execution
+      operationId: generatePdfReport
       tags:
         - Reports
       parameters:
-        - $ref: "#/components/parameters/ProjectIdHeader"
         - name: executionId
           in: query
           required: true
           schema:
             type: string
+          description: The execution ID to generate report for
       responses:
         "200":
-          description: PDF document
+          description: PDF report generated successfully
           content:
             application/pdf:
               schema:
@@ -2410,413 +857,101 @@ paths:
           $ref: "#/components/responses/BadRequestError"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
         "404":
           $ref: "#/components/responses/NotFoundError"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/reports/composite/pdf:
+  /api/projects:
     get:
-      summary: Generate a composite manual + automated PDF report
-      operationId: generateCompositeReport
+      summary: List projects
+      description: List projects visible to the authenticated user. Observed.
+      operationId: listProjects
       tags:
-        - Reports
+        - Projects
       parameters:
         - $ref: "#/components/parameters/ProjectIdHeader"
-        - name: manualExecutionId
-          in: query
-          required: true
-          schema:
-            type: string
       responses:
         "200":
-          description: PDF document
+          description: Successful response
           content:
-            application/pdf:
+            application/json:
               schema:
-                type: string
-                format: binary
-        "400":
-          $ref: "#/components/responses/BadRequestError"
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    slug:
+                      type: string
+                    role:
+                      type: string
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
 
-  /api/auth/sync:
+  /api/automated-results/start:
     post:
-      summary: Sync the signed-in Firebase user into TestLab
+      summary: Start an automated execution
       description: |
-        Upserts the user record and bootstraps a default project membership when the user has none.
-        Requires a Firebase bearer token; API keys are not accepted.
-      operationId: syncAuthUser
+        Creates an execution for SDK reporters (`startExecution` in
+        `@ovenbits/make-testlab-client`). Observed; schemas may evolve.
+      operationId: startAutomatedExecution
       tags:
-        - Auth
-      security:
-        - BearerAuth: []
+        - Automated Results
+      parameters:
+        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
+                suiteId:
+                  type: string
                 name:
                   type: string
-                  nullable: true
-                image:
+                environment:
                   type: string
-                  nullable: true
       responses:
         "200":
-          description: Synced user
+          description: Execution started
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  user:
-                    $ref: "#/components/schemas/UserReference"
+                  executionId:
+                    type: string
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
 
-  /api/cli/device/code:
+  /api/evidence/v1/ingest:
     post:
-      summary: Start a CLI browser device-login session
+      summary: Ingest observed case attempt
       description: |
-        Creates a pending device-login session for `testlab login`. Returns a `deviceCode` for the CLI
-        to poll and a `userCode` / verification URL for the human to confirm in the browser after
-        Google/Firebase sign-in. No authentication required.
-      operationId: createCliDeviceCode
+        Ingest observed steps / walkthrough metadata for a result.
+        Used by Client `ingestCaseAttempt`. Observed.
+      operationId: ingestEvidenceAttempt
       tags:
-        - CLI
-      security: []
-      responses:
-        "201":
-          description: Pending device-login session
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - deviceCode
-                  - userCode
-                  - verificationUri
-                  - verificationUriComplete
-                  - expiresIn
-                  - interval
-                properties:
-                  deviceCode:
-                    type: string
-                  userCode:
-                    type: string
-                    example: ABCD-EFGH
-                  verificationUri:
-                    type: string
-                    format: uri
-                  verificationUriComplete:
-                    type: string
-                    format: uri
-                  expiresIn:
-                    type: integer
-                    description: Seconds until the pending session expires
-                  interval:
-                    type: integer
-                    description: Suggested poll interval in seconds
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/cli/device/token:
-    post:
-      summary: Poll a CLI device-login session
-      description: |
-        Exchanges a `deviceCode` for a short-lived user credential once the human has approved the
-        session in the browser. The credential is returned once (`status: complete`) and then marked
-        consumed. Pending polls return `status: pending`.
-      operationId: pollCliDeviceToken
-      tags:
-        - CLI
-      security: []
+        - Evidence
+      parameters:
+        - $ref: "#/components/parameters/ProjectIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - deviceCode
-              properties:
-                deviceCode:
-                  type: string
+              additionalProperties: true
       responses:
         "200":
-          description: Pending, denied, or completed device login
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: object
-                    required: [status]
-                    properties:
-                      status:
-                        type: string
-                        enum: [pending]
-                  - type: object
-                    required: [status]
-                    properties:
-                      status:
-                        type: string
-                        enum: [denied]
-                  - type: object
-                    required: [status, accessToken, tokenType, email, expiresAt]
-                    properties:
-                      status:
-                        type: string
-                        enum: [complete]
-                      accessToken:
-                        type: string
-                      tokenType:
-                        type: string
-                        enum: [api_key]
-                      email:
-                        type: string
-                        format: email
-                      expiresAt:
-                        type: string
-                        format: date-time
-        "400":
-          description: Expired or already consumed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [expired, consumed]
-                  error:
-                    type: string
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/cli/device/approve:
-    post:
-      summary: Approve or deny a CLI device-login user code
-      description: |
-        Completes a pending device-login session after the human signs in with Google/Firebase.
-        On approve, mints a short-lived global API key used only as the CLI user credential
-        (stored outside project `.env` by the CLI). Requires a Firebase bearer token — API keys
-        are not accepted.
-      operationId: approveCliDeviceLogin
-      tags:
-        - CLI
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - userCode
-              properties:
-                userCode:
-                  type: string
-                  example: ABCD-EFGH
-                action:
-                  type: string
-                  enum: [approve, deny]
-                  default: approve
-      responses:
-        "200":
-          description: Approval or denial recorded
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [status]
-                properties:
-                  status:
-                    type: string
-                    enum: [approved, denied]
-        "400":
-          $ref: "#/components/responses/BadRequestError"
+          description: Ingest accepted
         "401":
           $ref: "#/components/responses/UnauthorizedError"
-        "404":
-          $ref: "#/components/responses/NotFoundError"
-        "409":
-          $ref: "#/components/responses/ConflictError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /api/dev/session:
-    get:
-      summary: Inspect or bootstrap a development session
-      description: |
-        Disabled in production (`403`). Without `browser=1`, reports whether the request carries a
-        valid development session. With `browser=1` and the correct `secret`, provisions a dev API
-        key, sets cookies, and redirects to `next`.
-      operationId: getDevSession
-      tags:
-        - Development
-      security: []
-      parameters:
-        - name: browser
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: ["1"]
-        - name: secret
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Required when `browser=1`
-        - name: next
-          in: query
-          required: false
-          schema:
-            type: string
-            default: "/"
-      responses:
-        "200":
-          description: Session state
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DevSessionState"
-        "307":
-          description: Cookie bootstrap redirect (only when `browser=1`)
-          headers:
-            Location:
-              schema:
-                type: string
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    post:
-      summary: Establish a development session
-      description: |
-        Disabled in production (`403`). Requires the `X-Dev-Session-Secret` header and a valid
-        `apiKey` in the body. Sets the development session cookies.
-      operationId: createDevSession
-      tags:
-        - Development
-      security: []
-      parameters:
-        - name: X-Dev-Session-Secret
-          in: header
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - apiKey
-              properties:
-                apiKey:
-                  type: string
-      responses:
-        "200":
-          description: Session established
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  user:
-                    $ref: "#/components/schemas/UserReference"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    delete:
-      summary: Clear the development session
-      description: Disabled in production (`403`). Requires the `X-Dev-Session-Secret` header.
-      operationId: deleteDevSession
-      tags:
-        - Development
-      security: []
-      parameters:
-        - name: X-Dev-Session-Secret
-          in: header
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Session cleared
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "403":
-          $ref: "#/components/responses/ForbiddenError"
-
-  /api/cron/reconcile-executions:
-    get:
-      summary: Scheduled reconciliation of stale automated executions
-      description: |
-        Invoked by the platform scheduler. Authenticated with a cron secret bearer token,
-        not an API key or Firebase token.
-      operationId: cronReconcileExecutions
-      tags:
-        - Cron
-      security:
-        - CronSecretAuth: []
-      responses:
-        "200":
-          description: Reconciliation summary
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - type: object
-                    properties:
-                      success:
-                        type: boolean
-                  - $ref: "#/components/schemas/ReconcileResult"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
 
 components:
   securitySchemes:
@@ -2830,10 +965,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Firebase ID token for user authentication
-    CronSecretAuth:
-      type: http
-      scheme: bearer
-      description: Shared cron secret, used only by scheduled jobs
 
   parameters:
     ProjectIdHeader:
@@ -2842,18 +973,7 @@ components:
       required: false
       schema:
         type: string
-      description: |
-        Selects the active project. When omitted the server falls back to the caller's oldest
-        project membership, so machine clients should always send it explicitly.
-
-    PageQuery:
-      name: page
-      in: query
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
+      description: Project id or slug (required for project-scoped API keys)
 
     TestCaseId:
       name: id
@@ -2879,70 +999,6 @@ components:
         type: string
       description: Test execution ID
 
-    ProjectId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Project ID
-
-    AttachmentId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Attachment ID
-
-    EvidenceArtifactId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Evidence artifact ID
-
-    EvidenceStepId:
-      name: stepId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Step observation ID
-
-    EvidenceResultId:
-      name: resultId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Test execution result ID
-
-    BatchId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Automation batch run ID
-
-    IntegrationId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Automation integration ID
-
-    MappingId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-      description: Suite automation mapping ID
-
   schemas:
     UserReference:
       type: object
@@ -2959,98 +1015,6 @@ components:
           nullable: true
           description: Profile picture URL
 
-    ProjectRole:
-      type: string
-      enum: [owner, editor, viewer]
-      description: |
-        Project membership role. `viewer` reads, `editor` adds test, suite, execution, result,
-        evidence, and trigger writes, `owner` adds project, membership, key, and GitHub management.
-        Source: `src/types/index.ts` and `research/mcp-server/auth-tenancy-safety.md` (Authorization mapping).
-
-    ApiKeyScope:
-      type: string
-      enum: [global, project]
-      description: |
-        `project` keys are bound to a single project; `global` keys resolve the project from
-        `X-Project-Id` or the caller's oldest membership. Source: `src/types/index.ts`.
-
-    AutomationStatus:
-      type: string
-      enum: [not_automated, automated, will_not_automate]
-      description: Source of truth is `AUTOMATION_STATUSES` in `src/types/index.ts`.
-
-    Priority:
-      type: string
-      enum: [critical, high, medium, low]
-
-    TestCaseAutomationRunner:
-      type: string
-      nullable: true
-      enum: [playwright, maestro, both]
-      description: Runner that covers this case. Test cases allow `both`; suites do not.
-
-    SuiteAutomationRunner:
-      type: string
-      nullable: true
-      enum: [playwright, maestro]
-      description: Picks the CI workflow when triggering from Runs.
-
-    AutomationKey:
-      type: string
-      nullable: true
-      minLength: 1
-      maxLength: 100
-      pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
-      description: Stable external identifier used by CI to resolve a test case.
-
-    TriggerableWorkflowId:
-      type: string
-      enum: [maestro-ios.yml, playwright-casa.yml]
-      description: |
-        The GitHub Actions workflow files TestLab is allowed to dispatch.
-        Defined only in Zod (`src/lib/schemas.ts`); there is no matching TypeScript type.
-
-    AutomationProvider:
-      type: string
-      enum: [webhook, github_actions, gitlab, jenkins, custom]
-      description: |
-        Only `github_actions` and `webhook` are exercised end to end today.
-        See GAP-17 in `research/mcp-server/api-gaps.md`.
-
-    ExecutionStatus:
-      type: string
-      enum: [todo, pass, fail, skipped, blocked]
-
-    AutomatedResultStatus:
-      type: string
-      enum: [pass, fail, skipped, blocked]
-      description: |
-        Automated ingestion deliberately narrows `ExecutionStatus` by excluding `todo`:
-        a runner reports an outcome, never a pending state.
-
-    TestRunStatus:
-      type: string
-      enum: [in_progress, completed]
-
-    ExecutionKind:
-      type: string
-      enum: [manual, automated]
-
-    PageMeta:
-      type: object
-      description: Pagination fields returned by the current list endpoints. These do not include `hasMore`.
-      required:
-        - total
-        - page
-        - limit
-      properties:
-        total:
-          type: integer
-        page:
-          type: integer
-        limit:
-          type: integer
-
     TestCaseStep:
       type: object
       required:
@@ -3062,10 +1026,8 @@ components:
           type: string
         description:
           type: string
-          maxLength: 2000
         expectedResult:
           type: string
-          maxLength: 2000
 
     TestCase:
       type: object
@@ -3092,17 +1054,9 @@ components:
           items:
             type: string
         automationStatus:
-          allOf:
-            - $ref: "#/components/schemas/AutomationStatus"
+          type: string
+          enum: [not_automated, automated, will_not_automate]
           default: not_automated
-        automationKey:
-          $ref: "#/components/schemas/AutomationKey"
-        automationRunner:
-          $ref: "#/components/schemas/TestCaseAutomationRunner"
-        priority:
-          allOf:
-            - $ref: "#/components/schemas/Priority"
-          default: medium
         createdBy:
           $ref: "#/components/schemas/UserReference"
         createdAt:
@@ -3119,20 +1073,12 @@ components:
       properties:
         title:
           type: string
-          minLength: 1
-          maxLength: 500
         description:
           type: string
-          nullable: true
-          maxLength: 5000
         preconditions:
           type: string
-          nullable: true
-          maxLength: 5000
         epicOrFeature:
           type: string
-          nullable: true
-          maxLength: 500
         steps:
           type: array
           items:
@@ -3141,55 +1087,9 @@ components:
           type: array
           items:
             type: string
-            maxLength: 100
         automationStatus:
-          $ref: "#/components/schemas/AutomationStatus"
-        automationKey:
-          $ref: "#/components/schemas/AutomationKey"
-        automationRunner:
-          $ref: "#/components/schemas/TestCaseAutomationRunner"
-        priority:
-          $ref: "#/components/schemas/Priority"
-
-    TestCaseUpdateInput:
-      allOf:
-        - $ref: "#/components/schemas/TestCaseInput"
-      description: Same shape as `TestCaseInput`; every field except `title` is optional.
-
-    TestCaseListPage:
-      type: object
-      allOf:
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: "#/components/schemas/TestCase"
-        - $ref: "#/components/schemas/PageMeta"
-
-    AutomationKeyResolution:
-      type: object
-      properties:
-        projectId:
           type: string
-        results:
-          type: array
-          items:
-            type: object
-            properties:
-              automationKey:
-                type: string
-              testCaseId:
-                type: string
-                nullable: true
-              found:
-                type: boolean
-        found:
-          type: integer
-        missing:
-          type: array
-          items:
-            type: string
+          enum: [not_automated, automated, will_not_automate]
 
     TestSuite:
       type: object
@@ -3201,8 +1101,6 @@ components:
         description:
           type: string
           nullable: true
-        automationRunner:
-          $ref: "#/components/schemas/SuiteAutomationRunner"
         testCaseIds:
           type: array
           items:
@@ -3223,47 +1121,12 @@ components:
       properties:
         name:
           type: string
-          minLength: 1
-          maxLength: 500
         description:
           type: string
-          nullable: true
-          maxLength: 5000
-        automationRunner:
-          $ref: "#/components/schemas/SuiteAutomationRunner"
         testCaseIds:
           type: array
           items:
             type: string
-
-    TestSuiteUpdateInput:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 500
-        description:
-          type: string
-          nullable: true
-          maxLength: 5000
-        automationRunner:
-          $ref: "#/components/schemas/SuiteAutomationRunner"
-        testCaseIds:
-          type: array
-          items:
-            type: string
-
-    TestSuiteListPage:
-      type: object
-      allOf:
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: "#/components/schemas/TestSuite"
-        - $ref: "#/components/schemas/PageMeta"
 
     StepExecutionResult:
       type: object
@@ -3280,7 +1143,8 @@ components:
         testCaseId:
           type: string
         status:
-          $ref: "#/components/schemas/ExecutionStatus"
+          type: string
+          enum: [todo, pass, fail, skipped, blocked]
         notes:
           type: string
           nullable: true
@@ -3289,7 +1153,8 @@ components:
           items:
             $ref: "#/components/schemas/StepExecutionResult"
         source:
-          $ref: "#/components/schemas/ExecutionKind"
+          type: string
+          enum: [manual, automated]
         duration:
           type: integer
           nullable: true
@@ -3298,16 +1163,6 @@ components:
           type: string
           nullable: true
           description: Error message/stack trace (for automated tests)
-        runnerEmail:
-          type: string
-          nullable: true
-          description: Test account email used for this result (CI)
-        runnerPersonaKey:
-          type: string
-          nullable: true
-          description: Catalog persona key for this result (CI)
-        attachmentCount:
-          type: integer
         executedBy:
           $ref: "#/components/schemas/UserReference"
         executedAt:
@@ -3324,116 +1179,20 @@ components:
         testCaseId:
           type: string
         status:
-          $ref: "#/components/schemas/ExecutionStatus"
+          type: string
+          enum: [todo, pass, fail, skipped, blocked]
         notes:
           type: string
         stepResults:
           type: array
           items:
             $ref: "#/components/schemas/StepExecutionResult"
-
-    RecordedExecutionResult:
-      type: object
-      properties:
-        success:
-          type: boolean
-        testCaseId:
-          type: string
-        status:
-          $ref: "#/components/schemas/ExecutionStatus"
-        notes:
-          type: string
-          nullable: true
-        stepResults:
-          type: array
-          items:
-            $ref: "#/components/schemas/StepExecutionResult"
-        executedBy:
-          $ref: "#/components/schemas/UserReference"
-        executedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-    AutomatedResultItemInput:
-      type: object
-      required:
-        - status
-      description: Exactly one of `testCaseId` or `automationKey` must be present.
-      properties:
-        testCaseId:
-          type: string
-        automationKey:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
-        status:
-          $ref: "#/components/schemas/AutomatedResultStatus"
         duration:
           type: integer
-          minimum: 0
+          description: Duration in milliseconds
         errorMessage:
           type: string
-          nullable: true
-          maxLength: 10000
-        notes:
-          type: string
-          nullable: true
-          maxLength: 5000
-        runnerEmail:
-          type: string
-          format: email
-          nullable: true
-        runnerPersonaKey:
-          type: string
-          nullable: true
-          pattern: "^[a-z0-9][a-z0-9._-]*$"
-        attachments:
-          type: array
-          items:
-            $ref: "#/components/schemas/AutomatedResultAttachmentInput"
-
-    AutomatedResultAttachmentInput:
-      type: object
-      required:
-        - filename
-        - storagePath
-        - contentType
-        - size
-        - url
-      properties:
-        filename:
-          type: string
-          maxLength: 500
-        storagePath:
-          type: string
-          maxLength: 2000
-        contentType:
-          type: string
-          maxLength: 200
-        size:
-          type: integer
-          minimum: 0
-        url:
-          type: string
-          maxLength: 2000
-        thumbnailUrl:
-          type: string
-          nullable: true
-          maxLength: 2000
-
-    RunnerContext:
-      type: object
-      nullable: true
-      description: When present as an object, at least one of `target` or `manifestPath` is required.
-      properties:
-        target:
-          type: string
-          maxLength: 500
-        manifestPath:
-          type: string
-          maxLength: 2000
+          description: Error message/stack trace
 
     TestExecution:
       type: object
@@ -3450,15 +1209,12 @@ components:
           type: string
           nullable: true
         status:
-          $ref: "#/components/schemas/TestRunStatus"
-        kind:
-          $ref: "#/components/schemas/ExecutionKind"
+          type: string
+          enum: [in_progress, completed]
         suiteId:
           type: string
-          nullable: true
         suiteName:
           type: string
-          nullable: true
         createdBy:
           $ref: "#/components/schemas/UserReference"
         executedBy:
@@ -3470,152 +1226,10 @@ components:
           type: string
           format: date-time
           nullable: true
-        gitSha:
-          type: string
-          nullable: true
-          description: Git commit SHA (for automated executions)
-        branch:
-          type: string
-          nullable: true
-          description: Git branch name (for automated executions)
-        ciRunUrl:
-          type: string
-          nullable: true
-          description: URL to the CI pipeline run (for automated executions)
-        buildNumber:
-          type: string
-          nullable: true
-          description: CI build number (for automated executions)
-        runnerContext:
-          $ref: "#/components/schemas/RunnerContext"
-        pairedAutomatedExecutionId:
-          type: string
-          nullable: true
-          description: ID of the paired automated execution (for composite reports)
-        pairedAutomatedExecution:
-          $ref: "#/components/schemas/PairedExecutionReference"
         testResults:
           type: array
           items:
             $ref: "#/components/schemas/TestExecutionResult"
-
-    TestExecutionListPage:
-      type: object
-      allOf:
-        - type: object
-          properties:
-            data:
-              type: array
-              items:
-                $ref: "#/components/schemas/TestExecution"
-        - $ref: "#/components/schemas/PageMeta"
-
-    PairedExecutionReference:
-      type: object
-      nullable: true
-      description: Lightweight reference to a paired automated execution
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-          nullable: true
-        version:
-          type: string
-          nullable: true
-        environment:
-          type: string
-          nullable: true
-        status:
-          $ref: "#/components/schemas/TestRunStatus"
-        executedAt:
-          type: string
-          format: date-time
-        completedAt:
-          type: string
-          format: date-time
-          nullable: true
-        gitSha:
-          type: string
-          nullable: true
-        branch:
-          type: string
-          nullable: true
-        ciRunUrl:
-          type: string
-          nullable: true
-        buildNumber:
-          type: string
-          nullable: true
-
-    AutomatedExecutionSummary:
-      type: object
-      description: Lightweight execution summary for the automated execution picker
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-          nullable: true
-        version:
-          type: string
-          nullable: true
-        environment:
-          type: string
-          nullable: true
-        status:
-          $ref: "#/components/schemas/TestRunStatus"
-        executedAt:
-          type: string
-          format: date-time
-        completedAt:
-          type: string
-          format: date-time
-          nullable: true
-        gitSha:
-          type: string
-          nullable: true
-        branch:
-          type: string
-          nullable: true
-        ciRunUrl:
-          type: string
-          nullable: true
-        buildNumber:
-          type: string
-          nullable: true
-        stats:
-          $ref: "#/components/schemas/ResultStatusSummary"
-
-    ResultStatusSummary:
-      type: object
-      properties:
-        total:
-          type: integer
-        pass:
-          type: integer
-        fail:
-          type: integer
-        skipped:
-          type: integer
-        blocked:
-          type: integer
-        todo:
-          type: integer
-
-    ExecutionCounts:
-      type: object
-      properties:
-        all:
-          type: integer
-        manual:
-          type: integer
-        automated:
-          type: integer
-        in_progress:
-          type: integer
-        completed:
-          type: integer
 
     TestExecutionInput:
       type: object
@@ -3630,585 +1244,45 @@ components:
           type: string
         testCaseIds:
           type: array
-          minItems: 1
           items:
             type: string
         name:
           type: string
-          nullable: true
         version:
           type: string
-          nullable: true
         environment:
           type: string
-          nullable: true
-
-    TestExecutionUpdateInput:
-      type: object
-      description: Every field is optional; only supplied fields are written.
-      properties:
-        name:
-          type: string
-          nullable: true
-        version:
-          type: string
-          nullable: true
-        environment:
-          type: string
-          nullable: true
-        status:
-          $ref: "#/components/schemas/TestRunStatus"
-        runnerContext:
-          $ref: "#/components/schemas/RunnerContext"
-        pairedAutomatedExecutionId:
-          type: string
-          nullable: true
 
     AutomatedResultsInput:
       type: object
+      required:
+        - results
       properties:
         executionId:
           type: string
           description: Existing execution ID to update (mutually exclusive with suiteId)
         suiteId:
           type: string
-          description: Suite ID to create new execution for (omit for ad hoc execution)
+          description: Suite ID to create new execution for (mutually exclusive with executionId)
         suiteName:
           type: string
-          nullable: true
-          description: Suite name (fetched automatically if suiteId is provided; optional label for ad hoc runs)
+          description: Suite name (fetched automatically if not provided)
         name:
           type: string
-          nullable: true
+          description: Name for the new execution
         version:
           type: string
-          nullable: true
+          description: Build/release version
         environment:
           type: string
-          nullable: true
-        gitSha:
-          type: string
-          nullable: true
-        branch:
-          type: string
-          nullable: true
-        ciRunUrl:
-          type: string
-          nullable: true
-          format: uri
-        buildNumber:
-          type: string
-          nullable: true
+          description: Environment name (e.g., staging, production)
         autoComplete:
           type: boolean
-          default: false
-        runnerContext:
-          $ref: "#/components/schemas/RunnerContext"
+          description: Automatically mark execution as completed when all tests are done
         results:
           type: array
-          default: []
           items:
-            $ref: "#/components/schemas/AutomatedResultItemInput"
-
-    AutomatedResultsStartInput:
-      type: object
-      properties:
-        suiteId:
-          type: string
-        suiteName:
-          type: string
-          nullable: true
-        name:
-          type: string
-          nullable: true
-        version:
-          type: string
-          nullable: true
-        environment:
-          type: string
-          nullable: true
-        gitSha:
-          type: string
-          nullable: true
-        branch:
-          type: string
-          nullable: true
-        ciRunUrl:
-          type: string
-          nullable: true
-          format: uri
-        buildNumber:
-          type: string
-          nullable: true
-        batchId:
-          type: string
-          nullable: true
-          description: Optional AutomationBatchRun id (must match batchItem when both set)
-        batchItemId:
-          type: string
-          nullable: true
-          description: AutomationBatchItem id from workflow input testlab_batch_item_id
-        runnerContext:
-          $ref: "#/components/schemas/RunnerContext"
-
-    AutomatedResultsStartResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        executionId:
-          type: string
-        executionStatus:
-          $ref: "#/components/schemas/TestRunStatus"
-        seededCount:
-          type: integer
-        batchItemId:
-          type: string
-          nullable: true
-        runnerContext:
-          $ref: "#/components/schemas/RunnerContext"
-
-    AutomatedResultsReconcileInput:
-      type: object
-      properties:
-        executionId:
-          type: string
-        staleMinutes:
-          type: integer
-          minimum: 1
-          maximum: 1440
-        force:
-          type: boolean
-          description: With `executionId`, skips the stale-window check
-
-    ReconcileResult:
-      type: object
-      properties:
-        staleMinutes:
-          type: integer
-        cutoff:
-          type: string
-          format: date-time
-        reconciled:
-          type: array
-          items:
-            type: object
-            properties:
-              executionId:
-                type: string
-              closedResults:
-                type: integer
-        skipped:
-          type: array
-          items:
-            type: object
-            properties:
-              executionId:
-                type: string
-              reason:
-                type: string
-
-    AutomatedResultsReconcileResponse:
-      allOf:
-        - type: object
-          properties:
-            success:
-              type: boolean
-        - $ref: "#/components/schemas/ReconcileResult"
-
-    AutomationTriggerInput:
-      type: object
-      required:
-        - workflowIds
-      properties:
-        environment:
-          type: string
-          nullable: true
-        branch:
-          type: string
-          nullable: true
-        buildLabel:
-          type: string
-          nullable: true
-        failFast:
-          type: boolean
-          default: false
-        workflowIds:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/TriggerableWorkflowId"
-        idempotencyKey:
-          type: string
-          maxLength: 200
-
-    AutomationBatchItem:
-      type: object
-      properties:
-        id:
-          type: string
-        batchRunId:
-          type: string
-        suiteId:
-          type: string
-        suiteName:
-          type: string
-        integrationId:
-          type: string
-        status:
-          type: string
-          enum: [pending, triggered, failed]
-        providerRef:
-          type: string
-          nullable: true
-        executionId:
-          type: string
-          nullable: true
-        errorMessage:
-          type: string
-          nullable: true
-        triggeredAt:
-          type: string
-          format: date-time
-          nullable: true
-
-    AutomationBatchRun:
-      type: object
-      properties:
-        id:
-          type: string
-        projectId:
-          type: string
-        status:
-          type: string
-          enum: [pending, running, completed, failed, partial]
-        runConfig:
-          type: object
-        totalCount:
-          type: integer
-        successCount:
-          type: integer
-        failureCount:
-          type: integer
-        triggeredAt:
-          type: string
-          format: date-time
-        completedAt:
-          type: string
-          format: date-time
-          nullable: true
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/AutomationBatchItem"
-
-    AutomationBatchRetryResult:
-      allOf:
-        - $ref: "#/components/schemas/AutomationBatchRun"
-        - type: object
-          properties:
-            retrySuccessCount:
-              type: integer
-            retryFailureCount:
-              type: integer
-
-    AutomationPreflightResult:
-      type: object
-      properties:
-        ready:
-          type: boolean
-          description: True when the GitHub App is configured, a repo is bound, and at least one workflow is ready
-        githubBound:
-          type: boolean
-        githubAppConfigured:
-          type: boolean
-        workflows:
-          type: array
-          items:
-            $ref: "#/components/schemas/AutomationPreflightWorkflow"
-        issues:
-          type: array
-          items:
-            $ref: "#/components/schemas/AutomationPreflightIssue"
-
-    AutomationPreflightWorkflow:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/TriggerableWorkflowId"
-        name:
-          type: string
-        description:
-          type: string
-        ready:
-          type: boolean
-        suiteId:
-          type: string
-          nullable: true
-        suiteName:
-          type: string
-          nullable: true
-        issue:
-          type: string
-          nullable: true
-
-    AutomationPreflightIssue:
-      type: object
-      properties:
-        suiteId:
-          type: string
-        suiteName:
-          type: string
-        issue:
-          type: string
-
-    AutomationIntegration:
-      type: object
-      description: "`webhookSecret` is deliberately never returned."
-      properties:
-        id:
-          type: string
-        projectId:
-          type: string
-        name:
-          type: string
-        provider:
-          $ref: "#/components/schemas/AutomationProvider"
-        webhookUrl:
-          type: string
-          nullable: true
-        headers:
-          type: object
-          additionalProperties:
-            type: string
-        githubOwner:
-          type: string
-          nullable: true
-        githubRepo:
-          type: string
-          nullable: true
-        defaultRef:
-          type: string
-          nullable: true
-        maestroSuiteId:
-          type: string
-          nullable: true
-        playwrightSuiteId:
-          type: string
-          nullable: true
-        isActive:
-          type: boolean
-        createdById:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    AutomationIntegrationList:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: "#/components/schemas/AutomationIntegration"
-        githubAppConfigured:
-          type: boolean
-
-    GitHubInstallUrlResponse:
-      type: object
-      properties:
-        installUrl:
-          type: string
-        configured:
-          type: boolean
-
-    AutomationIntegrationInput:
-      type: object
-      required:
-        - name
-      description: |
-        `githubOwner` and `githubRepo` are required when `provider` is `github_actions`;
-        otherwise `webhookUrl` is required.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 500
-        provider:
-          allOf:
-            - $ref: "#/components/schemas/AutomationProvider"
-          default: webhook
-        webhookUrl:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 2000
-        webhookSecret:
-          type: string
-          nullable: true
-          maxLength: 500
-          description: Write-only; never returned
-        headers:
-          type: object
-          additionalProperties:
-            type: string
-            maxLength: 200
-        githubOwner:
-          type: string
-          nullable: true
-          maxLength: 200
-        githubRepo:
-          type: string
-          nullable: true
-          maxLength: 200
-        defaultRef:
-          type: string
-          nullable: true
-          maxLength: 200
-        maestroSuiteId:
-          type: string
-          nullable: true
-          maxLength: 100
-        playwrightSuiteId:
-          type: string
-          nullable: true
-          maxLength: 100
-        isActive:
-          type: boolean
-          default: true
-
-    GitHubRepoBindingInput:
-      type: object
-      required:
-        - githubOwner
-        - githubRepo
-      description: Binds the project's GitHub integration to a repository.
-      properties:
-        githubOwner:
-          type: string
-          minLength: 1
-          maxLength: 200
-        githubRepo:
-          type: string
-          minLength: 1
-          maxLength: 200
-        defaultRef:
-          type: string
-          nullable: true
-          maxLength: 200
-        maestroSuiteId:
-          type: string
-          nullable: true
-          maxLength: 100
-        playwrightSuiteId:
-          type: string
-          nullable: true
-          maxLength: 100
-        name:
-          type: string
-          maxLength: 500
-
-    AutomationIntegrationUpdateInput:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 500
-        provider:
-          $ref: "#/components/schemas/AutomationProvider"
-        webhookUrl:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 2000
-        webhookSecret:
-          type: string
-          nullable: true
-          maxLength: 500
-        headers:
-          type: object
-          additionalProperties:
-            type: string
-            maxLength: 200
-        githubOwner:
-          type: string
-          nullable: true
-          maxLength: 200
-        githubRepo:
-          type: string
-          nullable: true
-          maxLength: 200
-        defaultRef:
-          type: string
-          nullable: true
-          maxLength: 200
-        maestroSuiteId:
-          type: string
-          nullable: true
-          maxLength: 100
-        playwrightSuiteId:
-          type: string
-          nullable: true
-          maxLength: 100
-        isActive:
-          type: boolean
-
-    SuiteAutomationMapping:
-      type: object
-      properties:
-        id:
-          type: string
-        projectId:
-          type: string
-        suiteId:
-          type: string
-        integrationId:
-          type: string
-        targetRef:
-          type: string
-          nullable: true
-        isActive:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    SuiteAutomationMappingInput:
-      type: object
-      required:
-        - suiteId
-        - integrationId
-      properties:
-        suiteId:
-          type: string
-        integrationId:
-          type: string
-        targetRef:
-          type: string
-          nullable: true
-          maxLength: 500
-        isActive:
-          type: boolean
-          default: true
-
-    SuiteAutomationMappingUpdateInput:
-      type: object
-      description: "`suiteId` and `integrationId` are omitted from the update schema."
-      properties:
-        targetRef:
-          type: string
-          nullable: true
-          maxLength: 500
-        isActive:
-          type: boolean
+            $ref: "#/components/schemas/TestExecutionResultInput"
 
     AutomatedResultsResponse:
       type: object
@@ -4218,7 +1292,8 @@ components:
         executionId:
           type: string
         executionStatus:
-          $ref: "#/components/schemas/TestRunStatus"
+          type: string
+          enum: [in_progress, completed]
         processedResults:
           type: array
           items:
@@ -4233,7 +1308,20 @@ components:
               error:
                 type: string
         summary:
-          $ref: "#/components/schemas/ResultStatusSummary"
+          type: object
+          properties:
+            total:
+              type: integer
+            pass:
+              type: integer
+            fail:
+              type: integer
+            skipped:
+              type: integer
+            blocked:
+              type: integer
+            todo:
+              type: integer
 
     ExecutionResultsResponse:
       type: object
@@ -4242,18 +1330,14 @@ components:
           type: string
         name:
           type: string
-          nullable: true
         version:
           type: string
-          nullable: true
         environment:
           type: string
-          nullable: true
         status:
-          $ref: "#/components/schemas/TestRunStatus"
+          type: string
         suiteName:
           type: string
-          nullable: true
         executedAt:
           type: string
           format: date-time
@@ -4262,14 +1346,24 @@ components:
           format: date-time
           nullable: true
         summary:
-          allOf:
-            - $ref: "#/components/schemas/ResultStatusSummary"
-            - type: object
-              properties:
-                automated:
-                  type: integer
-                manual:
-                  type: integer
+          type: object
+          properties:
+            total:
+              type: integer
+            pass:
+              type: integer
+            fail:
+              type: integer
+            skipped:
+              type: integer
+            blocked:
+              type: integer
+            todo:
+              type: integer
+            automated:
+              type: integer
+            manual:
+              type: integer
         results:
           type: array
           items:
@@ -4285,84 +1379,13 @@ components:
                 type: string
               duration:
                 type: integer
-                nullable: true
               errorMessage:
                 type: string
-                nullable: true
               notes:
                 type: string
-                nullable: true
               executedAt:
                 type: string
                 format: date-time
-                nullable: true
-
-    ProjectSummary:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        slug:
-          type: string
-        description:
-          type: string
-          nullable: true
-        role:
-          $ref: "#/components/schemas/ProjectRole"
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    ProjectDetail:
-      allOf:
-        - $ref: "#/components/schemas/ProjectSummary"
-        - type: object
-          properties:
-            slackWebhookUrl:
-              type: string
-              nullable: true
-            archivedAt:
-              type: string
-              format: date-time
-              nullable: true
-
-    ProjectUpdateInput:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-          nullable: true
-        slackWebhookUrl:
-          type: string
-          nullable: true
-        archivedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: |
-            Presence of the key archives the project; the supplied value is ignored and the
-            server stamps the current time.
-
-    ProjectMember:
-      type: object
-      properties:
-        id:
-          type: string
-        userId:
-          type: string
-        projectId:
-          type: string
-        role:
-          $ref: "#/components/schemas/ProjectRole"
-        user:
-          $ref: "#/components/schemas/UserReference"
 
     ApiKey:
       type: object
@@ -4373,12 +1396,7 @@ components:
           type: string
         keyPreview:
           type: string
-          description: Last characters of the key, for display only
-        projectId:
-          type: string
-          nullable: true
-        scope:
-          $ref: "#/components/schemas/ApiKeyScope"
+          description: Last 4 characters of the key
         createdAt:
           type: string
           format: date-time
@@ -4393,602 +1411,6 @@ components:
         isActive:
           type: boolean
 
-    ApiKeyWithSecret:
-      allOf:
-        - $ref: "#/components/schemas/ApiKey"
-        - type: object
-          properties:
-            key:
-              type: string
-              description: Plaintext key, returned only on creation
-
-    Attachment:
-      type: object
-      description: |
-        The full stored record, including `storagePath`. `research/mcp-server/api-gaps.md` GAP-11
-        flags exposing storage internals; the versioned surface is expected to redact it.
-      properties:
-        id:
-          type: string
-        filename:
-          type: string
-        storagePath:
-          type: string
-        contentType:
-          type: string
-        size:
-          type: integer
-        url:
-          type: string
-        thumbnailUrl:
-          type: string
-          nullable: true
-        testCaseId:
-          type: string
-          nullable: true
-        executionResultId:
-          type: string
-          nullable: true
-        uploadedById:
-          type: string
-        uploadedBy:
-          $ref: "#/components/schemas/UserReference"
-        uploadedAt:
-          type: string
-          format: date-time
-
-    AttachmentInput:
-      type: object
-      required:
-        - filename
-        - storagePath
-        - contentType
-        - size
-        - url
-      description: Exactly one of `testCaseId` or `executionResultId` identifies the parent.
-      properties:
-        filename:
-          type: string
-        storagePath:
-          type: string
-        contentType:
-          type: string
-        size:
-          type: integer
-        url:
-          type: string
-        thumbnailUrl:
-          type: string
-          nullable: true
-        testCaseId:
-          type: string
-          nullable: true
-        executionResultId:
-          type: string
-          nullable: true
-
-    CaseAttemptStatus:
-      type: string
-      enum:
-        - pass
-        - fail
-        - skipped
-        - blocked
-        - timed_out
-        - cancelled
-        - infrastructure_error
-        - unknown
-
-    StepObservationStatus:
-      type: string
-      enum:
-        - pass
-        - fail
-        - skipped
-        - blocked
-        - todo
-        - unknown
-
-    ArtifactAvailability:
-      type: string
-      enum:
-        - available
-        - missing
-        - unavailable
-        - expired
-
-    EvidenceStepInput:
-      type: object
-      required:
-        - sourceStepId
-        - title
-        - orderIndex
-        - status
-      properties:
-        sourceStepId:
-          type: string
-          minLength: 1
-          maxLength: 200
-          pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-        title:
-          type: string
-          minLength: 1
-          maxLength: 500
-        orderIndex:
-          type: integer
-          minimum: 0
-        status:
-          $ref: "#/components/schemas/StepObservationStatus"
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        finishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        errorMessage:
-          type: string
-          maxLength: 10000
-          nullable: true
-
-    EvidenceIngestInput:
-      type: object
-      required:
-        - idempotencyKey
-        - executionId
-        - runnerRunKey
-        - attemptNumber
-        - status
-      description: |
-        Exactly one of `testCaseId` or `automationKey` is required. `steps.orderIndex` and
-        `steps.sourceStepId` values must be unique within the payload.
-      properties:
-        idempotencyKey:
-          type: string
-          minLength: 1
-          maxLength: 500
-        executionId:
-          type: string
-          minLength: 1
-          maxLength: 100
-        testCaseId:
-          type: string
-          minLength: 1
-          maxLength: 100
-        automationKey:
-          type: string
-          minLength: 1
-          maxLength: 100
-          pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$"
-        runnerRunKey:
-          type: string
-          minLength: 1
-          maxLength: 200
-        runnerCaseKey:
-          type: string
-          minLength: 1
-          maxLength: 200
-          nullable: true
-        attemptNumber:
-          type: integer
-          minimum: 0
-        retryOfAttemptNumber:
-          type: integer
-          minimum: 0
-          nullable: true
-        status:
-          $ref: "#/components/schemas/CaseAttemptStatus"
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        finishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        durationMs:
-          type: integer
-          minimum: 0
-          nullable: true
-        errorMessage:
-          type: string
-          maxLength: 10000
-          nullable: true
-        steps:
-          type: array
-          maxItems: 200
-          items:
-            $ref: "#/components/schemas/EvidenceStepInput"
-
-    EvidenceIngestResponse:
-      type: object
-      required:
-        - caseAttemptId
-        - runAttemptId
-        - replayed
-        - steps
-      properties:
-        caseAttemptId:
-          type: string
-        runAttemptId:
-          type: string
-        replayed:
-          type: boolean
-        steps:
-          type: array
-          items:
-            type: object
-            required:
-              - id
-              - sourceStepId
-              - orderIndex
-            properties:
-              id:
-                type: string
-              sourceStepId:
-                type: string
-              orderIndex:
-                type: integer
-
-    EvidenceArtifactMetadata:
-      type: object
-      properties:
-        id:
-          type: string
-        kind:
-          type: string
-          example: screenshot
-        filename:
-          type: string
-        contentType:
-          type: string
-        size:
-          type: integer
-        sha256:
-          type: string
-          nullable: true
-        availability:
-          $ref: "#/components/schemas/ArtifactAvailability"
-        captureAt:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    EvidenceStepObservation:
-      type: object
-      properties:
-        id:
-          type: string
-        orderIndex:
-          type: integer
-        sourceStepId:
-          type: string
-        title:
-          type: string
-        status:
-          $ref: "#/components/schemas/StepObservationStatus"
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        finishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        errorMessage:
-          type: string
-          nullable: true
-        artifacts:
-          type: array
-          items:
-            $ref: "#/components/schemas/EvidenceArtifactMetadata"
-
-    EvidenceCaseAttempt:
-      type: object
-      properties:
-        id:
-          type: string
-        attemptNumber:
-          type: integer
-        status:
-          $ref: "#/components/schemas/CaseAttemptStatus"
-        retryOfId:
-          type: string
-          nullable: true
-        runnerCaseKey:
-          type: string
-          nullable: true
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        finishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        durationMs:
-          type: integer
-          nullable: true
-        errorMessage:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        steps:
-          type: array
-          items:
-            $ref: "#/components/schemas/EvidenceStepObservation"
-
-    EvidenceResultResponse:
-      type: object
-      required:
-        - resultId
-        - executionId
-        - resultStatus
-        - attempts
-      properties:
-        resultId:
-          type: string
-        executionId:
-          type: string
-        testCaseId:
-          type: string
-          nullable: true
-        resultStatus:
-          type: string
-        defaultAttemptId:
-          type: string
-          nullable: true
-        defaultStepId:
-          type: string
-          nullable: true
-        attempts:
-          type: array
-          items:
-            $ref: "#/components/schemas/EvidenceCaseAttempt"
-
-    EvidenceArtifactUploadResponse:
-      type: object
-      required:
-        - id
-        - stepObservationId
-        - kind
-        - filename
-        - contentType
-        - size
-        - availability
-        - replayed
-      properties:
-        id:
-          type: string
-        stepObservationId:
-          type: string
-        kind:
-          type: string
-          example: screenshot
-        filename:
-          type: string
-        contentType:
-          type: string
-        size:
-          type: integer
-        sha256:
-          type: string
-          nullable: true
-        availability:
-          $ref: "#/components/schemas/ArtifactAvailability"
-        captureAt:
-          type: string
-          format: date-time
-          nullable: true
-        replayed:
-          type: boolean
-
-    EvidenceArtifactAccessResponse:
-      type: object
-      required:
-        - id
-        - filename
-        - contentType
-        - size
-        - availability
-        - url
-        - expiresInSeconds
-      properties:
-        id:
-          type: string
-        filename:
-          type: string
-        contentType:
-          type: string
-        size:
-          type: integer
-        availability:
-          $ref: "#/components/schemas/ArtifactAvailability"
-        url:
-          type: string
-          format: uri
-        expiresInSeconds:
-          type: integer
-          example: 900
-
-    AuditLogEntry:
-      type: object
-      properties:
-        id:
-          type: string
-        projectId:
-          type: string
-        action:
-          type: string
-          description: "created, updated, deleted, closed, or reopened"
-        entityType:
-          type: string
-          description: "test_case, execution, and similar entity names"
-        entityId:
-          type: string
-        entityName:
-          type: string
-        userId:
-          type: string
-          nullable: true
-        user:
-          $ref: "#/components/schemas/UserReference"
-        createdAt:
-          type: string
-          format: date-time
-
-    ExecutionTrend:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-          description: Execution name, suite name, or "Ad hoc"
-        executedAt:
-          type: string
-          format: date-time
-        total:
-          type: integer
-        pass:
-          type: integer
-        fail:
-          type: integer
-        passRate:
-          type: integer
-          description: Whole-number percentage
-
-    FlakyTestCase:
-      type: object
-      properties:
-        testCaseId:
-          type: string
-        title:
-          type: string
-        epic:
-          type: string
-          nullable: true
-        passCount:
-          type: integer
-        failCount:
-          type: integer
-        totalRuns:
-          type: integer
-        flakyScore:
-          type: integer
-          description: Whole-number percentage; higher means more alternation between pass and fail
-
-    ImportInput:
-      type: object
-      description: |
-        Import validation is looser than the create endpoints: `automationStatus` values that are
-        not in `AUTOMATION_STATUSES` fall back to `not_automated`, and unsupported fields such as
-        `priority` and `automationKey` are ignored.
-      properties:
-        testCases:
-          type: array
-          items:
-            type: object
-            required:
-              - title
-            properties:
-              id:
-                type: string
-              title:
-                type: string
-              description:
-                type: string
-              preconditions:
-                type: string
-              epicOrFeature:
-                type: string
-              steps:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TestCaseStep"
-              labels:
-                type: array
-                items:
-                  type: string
-              automationStatus:
-                type: string
-        testSuites:
-          type: array
-          items:
-            type: object
-            required:
-              - name
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              description:
-                type: string
-              testCaseIds:
-                type: array
-                items:
-                  type: string
-
-    ImportResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        results:
-          type: object
-          properties:
-            testCasesImported:
-              type: integer
-            testCasesSkipped:
-              type: integer
-            testSuitesImported:
-              type: integer
-            testSuitesSkipped:
-              type: integer
-            errors:
-              type: array
-              items:
-                type: string
-
-    ExportDocument:
-      type: object
-      description: Present keys depend on the `type` query parameter.
-      properties:
-        exportedAt:
-          type: string
-          format: date-time
-        version:
-          type: string
-        testCases:
-          type: array
-          items:
-            $ref: "#/components/schemas/TestCase"
-        testSuites:
-          type: array
-          items:
-            $ref: "#/components/schemas/TestSuite"
-        executions:
-          type: array
-          items:
-            $ref: "#/components/schemas/TestExecution"
-
-    DevSessionState:
-      type: object
-      properties:
-        active:
-          type: boolean
-        user:
-          $ref: "#/components/schemas/UserReference"
-
     SuccessResponse:
       type: object
       properties:
@@ -4998,229 +1420,19 @@ components:
 
     ErrorResponse:
       type: object
-      description: |
-        Current error shape for every existing route: a single `error` string.
-        The versioned machine surface will use `QualityV1ErrorResponse` instead (GAP-04).
       properties:
         error:
           type: string
-
-    ValidationErrorResponse:
-      type: object
-      description: Returned by routes that validate with Zod.
-      properties:
-        error:
-          type: string
-          example: Validation failed
-        issues:
-          type: array
-          items:
-            type: object
-            properties:
-              path:
-                type: string
-              message:
-                type: string
-
-    # ---------------------------------------------------------------------------
-    # Quality API v1 — shared machine schemas.
-    #
-    # `GET /api/quality/v1/context` is implemented. Remaining quality/v1 routes
-    # and MachineClient scopes are still forward contract. Keep these schemas
-    # aligned with `src/lib/quality-api/` and the MCP adapter.
-    # ---------------------------------------------------------------------------
-
-    QualityV1RequestId:
-      type: string
-      description: |
-        Correlation identifier echoed on every quality API response and error, and logged with
-        tool name, duration, status code, and retry count.
-        Source: `research/mcp-server/transport-and-agent-ux.md` (Output conventions, Logging and observability).
-
-    QualityV1ProjectContext:
-      type: object
-      description: |
-        Bound project identity returned by `GET /api/quality/v1/context`.
-        One project is bound per client process; individual calls cannot override it.
-        Source: `research/mcp-server/auth-tenancy-safety.md` (Project binding, Authorization mapping)
-        and `research/mcp-server/mcp-tool-catalog.md` (`testlab_get_context`).
-      required:
-        - projectId
-        - projectName
-        - projectSlug
-        - archived
-        - role
-        - scope
-        - apiVersion
-        - requestId
-        - machineScopes
-      properties:
-        projectId:
-          type: string
-        projectName:
-          type: string
-        projectSlug:
-          type: string
-        archived:
-          type: boolean
-        role:
-          $ref: "#/components/schemas/ProjectRole"
-        scope:
-          $ref: "#/components/schemas/ApiKeyScope"
-        apiVersion:
-          type: string
-          description: TestLab quality API version the server implements
-        requestId:
-          $ref: "#/components/schemas/QualityV1RequestId"
-        machineScopes:
-          type: array
-          items:
-            type: string
-          description: |
-            MachineClient scopes. Empty until MCP Task 3 (project-scoped machine credentials).
-            ApiKey binding is reported in `scope` (`global` | `project`).
-
-    QualityV1ListEnvelope:
-      type: object
-      description: |
-        Bounded list response. Default page size 25, maximum 100; `hasMore` is always present and
-        clients must not auto-fetch every page.
-        Source: `research/mcp-server/transport-and-agent-ux.md` (Output conventions, Pagination and
-        query limits) and GAP-13 in `research/mcp-server/api-gaps.md`.
-      required:
-        - projectId
-        - requestId
-        - data
-        - page
-        - limit
-        - total
-        - hasMore
-      properties:
-        projectId:
-          type: string
-        requestId:
-          $ref: "#/components/schemas/QualityV1RequestId"
-        data:
-          type: array
-          items: {}
-        page:
-          type: integer
-          minimum: 1
-          default: 1
-        limit:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 25
-        total:
-          type: integer
-        hasMore:
-          type: boolean
-
-    QualityV1MutationEnvelope:
-      type: object
-      description: |
-        Bounded mutation response carrying tenant identity, audit linkage, and idempotent-replay state.
-        Source: `research/mcp-server/transport-and-agent-ux.md` (Output conventions).
-      required:
-        - projectId
-        - requestId
-        - data
-      properties:
-        projectId:
-          type: string
-        requestId:
-          $ref: "#/components/schemas/QualityV1RequestId"
-        data:
-          type: object
-          properties:
-            id:
-              type: string
-            updatedAt:
-              type: string
-              format: date-time
-        auditEventId:
-          type: string
-        idempotentReplay:
-          type: boolean
-
-    QualityV1ErrorCode:
-      type: string
-      description: |
-        Stable machine error codes. HTTP status text is not the agent contract.
-        Source: `research/mcp-server/transport-and-agent-ux.md` (Error contract) and GAP-04.
-        Task 6 implements this exact list in `src/lib/quality-api/errors.ts`.
-      enum:
-        - AUTHENTICATION_FAILED
-        - PROJECT_SCOPE_MISMATCH
-        - PERMISSION_DENIED
-        - INSUFFICIENT_SCOPE
-        - VALIDATION_FAILED
-        - NOT_FOUND
-        - VERSION_CONFLICT
-        - IDEMPOTENCY_CONFLICT
-        - CONFIRMATION_REQUIRED
-        - CONFIRMATION_EXPIRED
-        - RATE_LIMITED
-        - UPSTREAM_UNAVAILABLE
-        - PARTIAL_DISPATCH
-        - FILE_OUTSIDE_WORKDIR
-        - EVIDENCE_REJECTED
-        - UNKNOWN_DOMAIN_VALUE
-        - API_VERSION_UNSUPPORTED
-        - TASK_EXPIRED
-        - TASK_CANCELLED
-
-    QualityV1Error:
-      type: object
-      description: |
-        Error body used by every quality API failure.
-        Source: `research/mcp-server/transport-and-agent-ux.md` (Error contract).
-      required:
-        - code
-        - message
-        - retryable
-        - requestId
-      properties:
-        code:
-          $ref: "#/components/schemas/QualityV1ErrorCode"
-        message:
-          type: string
-        retryable:
-          type: boolean
-        requestId:
-          $ref: "#/components/schemas/QualityV1RequestId"
-        details:
-          type: object
-          description: Code-specific structured context, for example `entityId` and `currentUpdatedAt`
-        suggestedAction:
-          type: string
-          description: Recovery instruction the agent can act on
-
-    QualityV1ErrorResponse:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          $ref: "#/components/schemas/QualityV1Error"
 
   responses:
     UnauthorizedError:
-      description: Authentication required or rejected
+      description: Authentication required
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
           example:
             error: "Missing authentication. Provide either X-API-Key header or Authorization: Bearer <token>"
-
-    ForbiddenError:
-      description: Authenticated but not permitted for this project or role
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
 
     BadRequestError:
       description: Invalid request
@@ -5229,48 +1441,8 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 
-    ValidationError:
-      description: Request body failed schema validation
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ValidationErrorResponse"
-
     NotFoundError:
       description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-
-    ConflictError:
-      description: Conflicts with an existing record
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-
-    GoneError:
-      description: Resource exists but is no longer available
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-              availability:
-                $ref: "#/components/schemas/ArtifactAvailability"
-
-    UnprocessableEntityError:
-      description: Semantically invalid for the target provider
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-
-    ServiceUnavailableError:
-      description: A required integration is not configured on this instance
       content:
         application/json:
           schema:

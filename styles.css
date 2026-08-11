@@ -1,208 +1,289 @@
+/* TestLab docs theme — aligned to product globals.css (dark industrial UI) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
 :root {
-  /* Purple Colors */
-  --color-primary: oklch(0.55 0.25 290);
-  --color-primary-light: oklch(0.97 0.01 290);
-  --color-accent: oklch(0.90 0.08 290); /* More visible purple tint */
-  --color-purple-highlight: oklch(0.92 0.06 290);
-  
-  /* White/Background Colors */
-  --color-background: oklch(0.99 0 0);
-  --color-card: oklch(1 0 0);
-  --color-sidebar: oklch(0.98 0.01 290);
-  
-  /* Text */
-  --color-text: oklch(0 0 0); /* Pure black */
-  --color-text-secondary: oklch(0.3 0 0); /* Dark gray */
+  /* Surfaces (luminance depth, no purple) */
+  --tl-background: #0a0a0a;
+  --tl-foreground: #e5e5e5;
+  --tl-card: #161616;
+  --tl-popover: #1e1e1e;
+  --tl-sidebar: #121212;
+  --tl-muted: #232323;
+  --tl-muted-foreground: #808080;
+  --tl-border: #383838;
+  --tl-accent: #262626;
+
+  /* Action accent — muted electric blue */
+  --tl-primary: #4a90e2;
+  --tl-primary-hover: #3a7bc8;
+  --tl-primary-soft: color-mix(in srgb, #4a90e2 14%, transparent);
+  --tl-primary-foreground: #f7f7f7;
+
+  /* Semantic (optional callouts) */
+  --tl-pass: #4ade80;
+  --tl-fail: #f87171;
+  --tl-blocked: #fb923c;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius: 0.25rem;
 }
 
-/* Apply OKLCH colors to Mintlify elements */
+html,
 body {
-  background-color: var(--color-background);
-  color: var(--color-text);
+  background-color: var(--tl-background) !important;
+  color: var(--tl-foreground) !important;
+  font-family: var(--font-sans) !important;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Only apply purple to content links, not navigation */
+/* Headings + body copy */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--tl-foreground) !important;
+  font-family: var(--font-sans) !important;
+  letter-spacing: -0.01em;
+}
+
+p,
+li,
+span,
+div,
+td,
+th,
+label {
+  color: inherit;
+  font-family: var(--font-sans);
+}
+
+/* Content links */
 article a,
-main a:not([href*="vercel"]):not([href*="poc-test"]),
+main .prose a,
 .prose a,
 p a {
-  color: var(--color-primary);
+  color: var(--tl-primary) !important;
 }
 
 article a:hover,
-main a:not([href*="vercel"]):not([href*="poc-test"]):hover,
+main .prose a:hover,
 .prose a:hover,
 p a:hover {
-  color: oklch(0.50 0.25 290);
+  color: var(--tl-primary-hover) !important;
 }
 
-/* Top navigation tabs - black text */
+/* Topbar / tabs */
+header,
+[class*="Navbar"],
+[class*="navbar"],
+[class*="Topbar"],
+[class*="topbar"] {
+  background-color: var(--tl-background) !important;
+  border-color: var(--tl-border) !important;
+}
+
 header a,
 [role="tablist"] a,
 [role="tab"],
-nav > a,
 [class*="Topbar"] a,
 [class*="topbar"] a,
-[class*="tabs"] a,
-[class*="Tab"],
-.nav-tabs-item,
-[class*="nav-tabs-item"],
-a.nav-tabs-item {
-  color: var(--color-text) !important;
+[class*="tabs"] a {
+  color: var(--tl-muted-foreground) !important;
+  font-family: var(--font-sans) !important;
 }
 
-[class*="tabs"] a:hover,
 header a:hover,
 [role="tab"]:hover,
-.nav-tabs-item:hover,
-[class*="nav-tabs-item"]:hover {
-  color: var(--color-text) !important;
+[class*="tabs"] a:hover {
+  color: var(--tl-foreground) !important;
 }
 
-/* Buttons */
-button[class*="primary"],
-.primary-button {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-button[class*="primary"]:hover,
-.primary-button:hover {
-  background-color: oklch(0.50 0.25 290);
-}
-
-/* Cards and popovers */
-[class*="card"],
-[class*="popover"] {
-  background-color: var(--color-card);
-}
-
-/* Sidebar */
-[class*="sidebar"],
-nav {
-  background-color: var(--color-sidebar);
-}
-
-/* Secondary elements */
-[class*="secondary"] {
-  background-color: var(--color-primary-light);
-}
-
-
-/* Code blocks - remove highlight/background */
-pre,
-code {
-  background-color: transparent !important;
-  color: var(--color-text);
-}
-
-/* Remove background from inline code */
-code:not(pre code) {
-  background-color: transparent !important;
-  border: 1px solid oklch(0.9 0.01 290);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-/* Ensure black text throughout */
-h1, h2, h3, h4, h5, h6,
-p, span, div, li {
-  color: var(--color-text) !important;
-}
-
-/* Sidebar navigation links - black text */
-aside a,
-nav a:not(.text-primary),
-[class*="sidebar"] a:not(.text-primary) {
-  color: var(--color-text) !important;
-}
-
-/* Navigation section titles */
-nav h2,
-nav h3,
-nav h4 {
-  color: var(--color-text) !important;
-  font-weight: 600 !important;
-}
-
-/* Sidebar group headers - no background */
-.sidebar-group-header,
-[class*="sidebar-group-header"] {
-  background-color: transparent !important;
-  color: var(--color-text) !important;
-}
-
-/* All sidebar items - transparent by default */
-.sidebar-group a,
-[class*="sidebar-group"] a,
-ul.sidebar-group a {
-  background-color: transparent !important;
-}
-
-/* ONLY selected sidebar item gets purple background */
-.sidebar-group a.bg-primary\/10,
-[class*="sidebar-group"] a.bg-primary\/10,
-a.bg-primary\/10.text-primary {
-  background-color: var(--color-purple-highlight) !important;
-}
-
-/* Highlight ONLY the active sidebar item (has both bg-primary/10 AND text-primary) */
-.bg-primary\/10.text-primary,
-.text-primary.bg-primary\/10 {
-  background-color: var(--color-purple-highlight) !important;
-  color: var(--color-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Remove bubble/highlight from selected tab */
-[class*="tab"][class*="active"],
+[role="tab"][aria-selected="true"],
 [class*="tab"][aria-selected="true"],
-[class*="tabs"] [class*="active"],
-button[role="tab"][aria-selected="true"] {
+[class*="tabs"] a[aria-current="page"],
+a[aria-current="page"] {
+  color: var(--tl-foreground) !important;
   background-color: transparent !important;
-  border-bottom: none !important;
   box-shadow: none !important;
 }
 
-/* Remove any tab indicator/bubble */
 [class*="tab-indicator"],
 [class*="TabIndicator"] {
-  display: none !important;
+  background-color: var(--tl-primary) !important;
 }
 
-/* Logo size */
-img[alt*="logo"],
-[class*="logo"] img {
-  height: auto !important;
-  max-height: 57px !important;
-  width: auto !important;
-  min-width: 142px !important;
-  object-fit: contain !important;
+/* Sidebar */
+aside,
+[class*="Sidebar"],
+[class*="sidebar"],
+nav[class*="sidebar"] {
+  background-color: var(--tl-sidebar) !important;
+  border-color: color-mix(in srgb, #ffffff 8%, transparent) !important;
 }
 
-/* Dashboard button - ensure it's visible and styled */
-a[href*="vercel"],
-a[href*="poc-test"] {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  background-color: var(--color-primary) !important;
-  color: #ffffff !important;
-  padding: 8px 16px !important;
-  border-radius: 6px !important;
+aside a,
+[class*="sidebar"] a,
+nav a {
+  color: color-mix(in srgb, #e5e5e5 60%, transparent) !important;
+  font-family: var(--font-sans) !important;
+  border-radius: var(--radius) !important;
+}
+
+aside a:hover,
+[class*="sidebar"] a:hover {
+  background-color: color-mix(in srgb, #ffffff 6%, transparent) !important;
+  color: var(--tl-foreground) !important;
+}
+
+/* Active nav item — primary tint like app sidebar active state */
+aside a[aria-current="page"],
+[class*="sidebar"] a[aria-current="page"],
+.bg-primary\/10.text-primary,
+.text-primary.bg-primary\/10,
+a.bg-primary\/10 {
+  background-color: var(--tl-primary-soft) !important;
+  color: var(--tl-primary) !important;
+  border-left: 2px solid var(--tl-primary) !important;
   font-weight: 500 !important;
 }
 
-/* Dashboard button text - ensure white */
-a[href*="vercel"] *,
-a[href*="poc-test"] * {
-  color: #ffffff !important;
+nav h2,
+nav h3,
+nav h4,
+[class*="sidebar-group-header"],
+.sidebar-group-header {
+  background-color: transparent !important;
+  color: var(--tl-muted-foreground) !important;
+  font-weight: 600 !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
 }
 
-/* Dashboard button hover - stay purple, slightly darker */
-a[href*="vercel"]:hover,
-a[href*="poc-test"]:hover {
-  background-color: oklch(0.45 0.25 290) !important;
-  color: white !important;
+/* Cards / callouts / panels */
+[class*="card"],
+[class*="Card"],
+[class*="popover"],
+[class*="Callout"],
+[class*="callout"],
+[class*="Info"],
+[class*="Warning"],
+[class*="Tip"] {
+  background-color: var(--tl-card) !important;
+  border-color: var(--tl-border) !important;
+  border-radius: calc(var(--radius) + 2px) !important;
+  color: var(--tl-foreground) !important;
+}
+
+/* Primary buttons + topbar CTA */
+button[class*="primary"],
+.primary-button,
+header a[href*="poc-test-management"],
+[class*="Navbar"] a[href*="poc-test-management"],
+[class*="Topbar"] a[href*="poc-test-management"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: var(--tl-primary) !important;
+  color: var(--tl-primary-foreground) !important;
+  padding: 8px 14px !important;
+  border-radius: var(--radius) !important;
+  font-weight: 500 !important;
+  font-family: var(--font-sans) !important;
+  border: none !important;
+}
+
+button[class*="primary"]:hover,
+.primary-button:hover,
+header a[href*="poc-test-management"]:hover,
+[class*="Navbar"] a[href*="poc-test-management"]:hover,
+[class*="Topbar"] a[href*="poc-test-management"]:hover {
+  background-color: var(--tl-primary-hover) !important;
+  color: var(--tl-primary-foreground) !important;
   opacity: 1 !important;
+}
+
+header a[href*="poc-test-management"] *,
+[class*="Navbar"] a[href*="poc-test-management"] *,
+[class*="Topbar"] a[href*="poc-test-management"] * {
+  color: var(--tl-primary-foreground) !important;
+}
+
+/* Code — mono + darker surfaces */
+pre,
+code,
+[class*="CodeBlock"],
+[class*="codeblock"] {
+  font-family: var(--font-mono) !important;
+  font-feature-settings: "tnum" on, "lnum" on;
+}
+
+pre,
+[class*="CodeBlock"] pre,
+[class*="code-block"] {
+  background-color: var(--tl-card) !important;
+  border: 1px solid var(--tl-border) !important;
+  border-radius: calc(var(--radius) + 2px) !important;
+  color: var(--tl-foreground) !important;
+}
+
+code:not(pre code) {
+  background-color: var(--tl-muted) !important;
+  border: 1px solid var(--tl-border) !important;
+  color: var(--tl-foreground) !important;
+  padding: 2px 6px !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.875em !important;
+}
+
+/* Tables */
+table {
+  border-color: var(--tl-border) !important;
+}
+
+th {
+  background-color: var(--tl-card) !important;
+  color: var(--tl-muted-foreground) !important;
+  font-weight: 600 !important;
+}
+
+td {
+  border-color: var(--tl-border) !important;
+  color: var(--tl-foreground) !important;
+}
+
+/* Steps / badges / misc Mintlify chrome */
+[class*="Step"],
+[class*="step"] {
+  border-color: var(--tl-border) !important;
+}
+
+/* Scrollbars — thin like the app */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #474747;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #616161;
+}
+
+/* Logo sizing */
+img[alt*="logo"],
+[class*="logo"] img {
+  height: auto !important;
+  max-height: 40px !important;
+  width: auto !important;
+  object-fit: contain !important;
 }

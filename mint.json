@@ -7,16 +7,25 @@
   },
   "favicon": "/favicon.ico",
   "modeToggle": {
-    "default": "light",
+    "default": "dark",
     "isHidden": true
   },
   "colors": {
-    "primary": "#8b5cf6",
-    "light": "#f5f3ff",
-    "dark": "#6d28d9",
+    "primary": "#4A90E2",
+    "light": "#6BA3E8",
+    "dark": "#3A7BC8",
     "background": {
-      "light": "#fdfcfe",
-      "dark": "#1a0b2e"
+      "light": "#0A0A0A",
+      "dark": "#0A0A0A"
+    }
+  },
+  "font": {
+    "headings": {
+      "family": "Inter",
+      "weight": 600
+    },
+    "body": {
+      "family": "Inter"
     }
   },
   "css": ["/styles.css"],
