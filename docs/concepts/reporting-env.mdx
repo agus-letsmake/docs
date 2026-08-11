@@ -1,0 +1,23 @@
+---
+title: Reporting env
+description: "TESTLAB_* variables consumed by the Client package"
+---
+
+**Reporting env** is the set of environment variables the Client package reads
+to push results. CLI init upserts only `TESTLAB_*` keys and leaves other `.env`
+variables untouched.
+
+| Variable                 | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `TESTLAB_URL`            | Base URL (https, or http://localhost)        |
+| `TESTLAB_API_KEY`        | Project-scoped API key                       |
+| `TESTLAB_PROJECT_ID`     | Project id or slug                           |
+| `TESTLAB_PUSH`           | Must be `1` to enable network                |
+| `TESTLAB_EVIDENCE`       | Opt out with `0` (on by default when push=1) |
+| `TESTLAB_EVIDENCE_MODE`  | `failures` (default), `critical`, or `all`   |
+| `TESTLAB_DEFER_COMPLETE` | `1` when CI cleanup owns complete/reconcile  |
+| `TESTLAB_EXECUTION_ID`   | Set after `startExecution` (Playwright path) |
+| `TESTLAB_PUSH_REQUIRED`  | `1` to fail the process on push failures     |
+
+Suite id is optional depending on how you start the execution — do not treat it
+as required for every run.

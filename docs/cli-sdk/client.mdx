@@ -1,0 +1,33 @@
+---
+title: Client package
+description: "Runner-agnostic HTTP client for automated results"
+---
+
+Package: `@ovenbits/make-testlab-client`
+
+Shared reporting brain for runners: start/push/complete, evidence policy,
+redaction, and config. Dependency of the Playwright SDK; also usable directly.
+
+```js
+const {
+  startExecution,
+  pushResults,
+  completeExecution,
+} = require("@ovenbits/make-testlab-client");
+
+const { executionId } = await startExecution({
+  suiteId: process.env.TESTLAB_SUITE_ID,
+  name: "CI",
+});
+
+await pushResults({
+  executionId,
+  results: [{ automationKey: "DEMO-01", status: "pass", duration: 100 }],
+});
+
+await completeExecution(executionId, { forceReconcile: true });
+```
+
+Evidence helpers: `uploadAttachment`, `ingestCaseAttempt`, `uploadStepScreenshot`.
+
+See [Evidence](/docs/concepts/evidence) and [Reporting env](/docs/concepts/reporting-env).

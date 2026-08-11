@@ -1,406 +1,80 @@
 ---
 title: CI/CD Integration Guide
-description: 'Integrate TestLab with your CI/CD pipeline'
+description: "Push automated results from CI using the Playwright SDK"
 ---
 
 ## Overview
 
-This guide shows you how to integrate TestLab with your CI/CD pipeline to automatically push test results from automated test frameworks like Jest, Cypress, or Playwright.
+Prefer **`@ovenbits/make-testlab-playwright`** (and the shared Client package) for
+CI reporting. Configure secrets once, push on every run, review under **Runs**.
+
+For a shorter recipe see [GitHub Actions reporting](/docs/ci-automations/github-actions).
 
 ## Prerequisites
 
-- TestLab API key
-- A CI/CD pipeline (GitHub Actions, GitLab CI, Jenkins, etc.)
-- Automated tests (Jest, Cypress, Playwright, etc.)
+- Project-scoped API key (`TESTLAB_API_KEY`)
+- `TESTLAB_URL` and `TESTLAB_PROJECT_ID`
+- Playwright tests with automation keys (tags or titles)
 
-## Integration with Jest
+## Playwright (recommended)
 
-We provide a ready-to-use Jest integration script that transforms Jest JSON output to TestLab format.
-
-### Step 1: Download the Integration Script
-
-The integration script is available in the `scripts` folder of the TestLab repository:
+### 1. Install
 
 ```bash
-# Download the script
-curl -O https://raw.githubusercontent.com/letsmake/testlab/main/scripts/jest-to-testlab.js
+npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
 ```
 
-### Step 2: Configure Test Case ID Mapping
+### 2. Register the reporter
 
-The script supports multiple ways to map Jest tests to TestLab test cases:
-
-#### Option 1: Include ID in Test Name
-
-```javascript
-test('tc-001-login-valid: User can login with valid credentials', async () => {
-  // Test code
-});
-
-test('[tc-002-login-invalid] User cannot login with invalid credentials', async () => {
-  // Test code
-});
-```
-
-#### Option 2: Use Mapping File
-
-Edit the `testCaseMapping` object in `jest-to-testlab.js`:
-
-```javascript
-const testCaseMapping = {
-  'login with valid credentials': 'tc-001-login-valid',
-  'login with invalid credentials': 'tc-002-login-invalid',
-  'password reset': 'tc-003-password-reset',
-  'add to cart': 'tc-004-add-to-cart',
-};
-```
-
-### Step 3: Run Tests with JSON Output
-
-```bash
-# Run Jest with JSON output
-npx jest --json --outputFile=jest-results.json
-```
-
-### Step 4: Push Results to TestLab
-
-```bash
-# Set environment variables
-export TESTLAB_API_KEY=tlk_your_api_key_here
-export TESTLAB_SUITE_ID=suite-abc123
-export TESTLAB_VERSION=v1.2.3
-export TESTLAB_ENV=ci
-
-# Run the integration script
-node jest-to-testlab.js jest-results.json
-```
-
-### Complete Example
-
-```bash Complete Jest Workflow
-#!/bin/bash
-
-# Run tests and generate JSON output
-npm test -- --json --outputFile=jest-results.json
-
-# Push results to TestLab
-TESTLAB_API_KEY=$TESTLAB_API_KEY \
-TESTLAB_SUITE_ID=$TESTLAB_SUITE_ID \
-TESTLAB_VERSION=$BUILD_VERSION \
-TESTLAB_ENV=ci \
-node scripts/jest-to-testlab.js jest-results.json
-
-# Check exit code
-if [ $? -ne 0 ]; then
-  echo "Failed to push results to TestLab"
-  exit 1
-fi
-```
-
-## GitHub Actions Integration
-
-Here's a complete GitHub Actions workflow:
-
-```yaml .github/workflows/test.yml
-name: Run Tests
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run tests
-        run: npm test -- --json --outputFile=jest-results.json
-        continue-on-error: true
-      
-      - name: Push results to TestLab
-        env:
-          TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
-          TESTLAB_SUITE_ID: ${{ secrets.TESTLAB_SUITE_ID }}
-          TESTLAB_VERSION: ${{ github.sha }}
-          TESTLAB_ENV: ci
-          TESTLAB_EXECUTION_NAME: "CI Run - ${{ github.event_name }} - #${{ github.run_number }}"
-        run: |
-          node scripts/jest-to-testlab.js jest-results.json
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: jest-results.json
-```
-
-### Configure GitHub Secrets
-
-Add these secrets to your repository:
-
-1. Go to Settings → Secrets and variables → Actions
-2. Add the following secrets:
-   - `TESTLAB_API_KEY`: Your TestLab API key
-   - `TESTLAB_SUITE_ID`: The suite ID to create executions for
-
-## GitLab CI Integration
-
-```yaml .gitlab-ci.yml
-test:
-  stage: test
-  image: node:18
-  script:
-    - npm ci
-    - npm test -- --json --outputFile=jest-results.json || true
-    - |
-      TESTLAB_API_KEY=$TESTLAB_API_KEY \
-      TESTLAB_SUITE_ID=$TESTLAB_SUITE_ID \
-      TESTLAB_VERSION=$CI_COMMIT_SHA \
-      TESTLAB_ENV=ci \
-      TESTLAB_EXECUTION_NAME="CI Run - $CI_PIPELINE_ID" \
-      node scripts/jest-to-testlab.js jest-results.json
-  artifacts:
-    when: always
-    paths:
-      - jest-results.json
-    expire_in: 1 week
-  variables:
-    TESTLAB_API_KEY: $TESTLAB_API_KEY
-    TESTLAB_SUITE_ID: $TESTLAB_SUITE_ID
-```
-
-## Jenkins Integration
-
-```groovy Jenkinsfile
-pipeline {
-    agent any
-    
-    environment {
-        TESTLAB_API_KEY = credentials('testlab-api-key')
-        TESTLAB_SUITE_ID = 'suite-abc123'
-    }
-    
-    stages {
-        stage('Install') {
-            steps {
-                sh 'npm ci'
-            }
-        }
-        
-        stage('Test') {
-            steps {
-                sh 'npm test -- --json --outputFile=jest-results.json || true'
-            }
-        }
-        
-        stage('Push to TestLab') {
-            steps {
-                sh '''
-                    TESTLAB_VERSION=${BUILD_NUMBER} \
-                    TESTLAB_ENV=ci \
-                    TESTLAB_EXECUTION_NAME="Jenkins Build #${BUILD_NUMBER}" \
-                    node scripts/jest-to-testlab.js jest-results.json
-                '''
-            }
-        }
-    }
-    
-    post {
-        always {
-            archiveArtifacts artifacts: 'jest-results.json', allowEmptyArchive: true
-        }
-    }
-}
-```
-
-## Direct API Integration
-
-If you prefer to integrate directly without using the script:
-
-```javascript Custom Integration
-const fs = require('fs');
-const fetch = require('node-fetch');
-
-async function pushResults() {
-  // Read Jest results
-  const jestResults = JSON.parse(fs.readFileSync('jest-results.json', 'utf8'));
-  
-  // Transform to TestLab format
-  const results = jestResults.testResults.flatMap(file =>
-    file.assertionResults.map(test => {
-      // Extract test case ID from test name
-      const match = test.fullName.match(/tc-[\w]+-[\w-]+/i);
-      if (!match) return null;
-      
-      return {
-        testCaseId: match[0].toLowerCase(),
-        status: test.status === 'passed' ? 'pass' : 
-                test.status === 'failed' ? 'fail' : 'skipped',
-        duration: test.duration,
-        errorMessage: test.failureMessages?.join('\n') || undefined
-      };
-    }).filter(Boolean)
-  );
-  
-  // Push to TestLab
-  const response = await fetch('https://testlab.letsmake.com/api/automated-results', {
-    method: 'POST',
-    headers: {
-      'X-API-Key': process.env.TESTLAB_API_KEY,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      suiteId: process.env.TESTLAB_SUITE_ID,
-      name: `CI Run - ${new Date().toISOString()}`,
-      version: process.env.TESTLAB_VERSION,
-      environment: process.env.TESTLAB_ENV,
-      autoComplete: true,
-      results
-    })
-  });
-  
-  const data = await response.json();
-  console.log(`✅ Execution created: ${data.executionId}`);
-  console.log(`   Pass: ${data.summary.pass}, Fail: ${data.summary.fail}`);
-  
-  // Exit with error if tests failed
-  if (data.summary.fail > 0) {
-    process.exit(1);
-  }
-}
-
-pushResults();
-```
-
-## Integration with Other Test Frameworks
-
-### Cypress
-
-```javascript
-// cypress.config.js
-const { defineConfig } = require('cypress');
-
-module.exports = defineConfig({
-  e2e: {
-    setupNodeEvents(on, config) {
-      on('after:run', async (results) => {
-        // Transform and push to TestLab
-        await pushToTestLab(results);
-      });
-    },
-  },
-});
-```
-
-### Playwright
-
-```javascript
-// playwright.config.js
-import { defineConfig } from '@playwright/test';
+```ts
+import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  reporter: [
-    ['json', { outputFile: 'playwright-results.json' }],
-    [
-      './testlab-reporter.js',
-      {
-        apiKey: process.env.TESTLAB_API_KEY,
-        suiteId: process.env.TESTLAB_SUITE_ID,
-      },
-    ],
-  ],
+  use: { screenshot: "on" },
+  reporter: [["list"], ["@ovenbits/make-testlab-playwright"]],
 });
 ```
 
-## Best Practices
+### 3. GitHub Actions example
 
-<AccordionGroup>
-  <Accordion title="Use Descriptive Execution Names">
-    Include build number, branch, or PR number in execution names:
-    ```javascript
-    name: `CI Run - PR #${prNumber} - Build #${buildNumber}`
-    ```
-  </Accordion>
+```yaml
+- name: Install dependencies
+  run: npm ci
 
-  <Accordion title="Set autoComplete to true">
-    Automatically mark executions as completed when all results are in:
-    ```json
-    {
-      "autoComplete": true
-    }
-    ```
-  </Accordion>
+- name: Run Playwright with TestLab reporting
+  env:
+    TESTLAB_URL: ${{ secrets.TESTLAB_URL }}
+    TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+    TESTLAB_PROJECT_ID: ${{ secrets.TESTLAB_PROJECT_ID }}
+    TESTLAB_PUSH: "1"
+  run: npx playwright test
+```
 
-  <Accordion title="Track Test Duration">
-    Include duration for performance monitoring:
-    ```json
-    {
-      "duration": test.duration
-    }
-    ```
-  </Accordion>
+### 4. Optional cleanup ownership
 
-  <Accordion title="Handle Test Failures Gracefully">
-    Continue CI pipeline even if some tests fail, but mark the build as unstable:
-    ```bash
-    npm test || true  # Don't fail immediately
-    # Push results to TestLab
-    # Then check results and fail if needed
-    ```
-  </Accordion>
+If CI owns completion:
 
-  <Accordion title="Store Execution ID">
-    Save the execution ID for later reference:
-    ```bash
-    echo "execution_id=$EXECUTION_ID" >> $GITHUB_OUTPUT
-    ```
-  </Accordion>
-</AccordionGroup>
+```yaml
+env:
+  TESTLAB_DEFER_COMPLETE: "1"
+```
 
-## Troubleshooting
+Then call Client `completeExecution` / reconcile in a final job step.
 
-<AccordionGroup>
-  <Accordion title="Tests not mapping to test cases">
-    - Verify test case IDs exist in TestLab
-    - Check the naming convention in your tests
-    - Update the testCaseMapping in the script
-    - Use `--dry-run` to see what would be mapped
-  </Accordion>
+## Non-Playwright runners
 
-  <Accordion title="API key authentication fails">
-    - Verify the API key is correct in your CI/CD secrets
-    - Check that the key is active (not disabled)
-    - Ensure the key hasn't expired
-  </Accordion>
+Use [`@ovenbits/make-testlab-client`](/docs/cli-sdk/client) directly
+(`startExecution` → `pushResults` → `completeExecution`).
 
-  <Accordion title="Suite not found error">
-    - Verify the suite ID exists in TestLab
-    - Check that you have access to the suite
-    - Ensure the suite ID is correctly set in environment variables
-  </Accordion>
-</AccordionGroup>
+## Legacy Jest JSON script
 
-## Next Steps
+Older Jest converter scripts may still exist in historical repos. Prefer the
+Client package for new work. If you must map Jest JSON yourself, post to
+`POST /api/automated-results` with `X-API-Key` and `X-Project-Id` — see
+[API reference](/docs/api-reference/automated-results/push).
 
-<CardGroup cols={2}>
-  <Card title="Automated Results API" icon="robot" href="/api-reference/automated-results/push">
-    Learn more about the automated results endpoint
-  </Card>
-  <Card title="Examples" icon="lightbulb" href="/guides/examples">
-    See more integration examples
-  </Card>
-</CardGroup>
+## Related
+
+- [Reporting env](/docs/concepts/reporting-env)
+- [Automations](/docs/ci-automations/automations)
+- [Quick start](/docs/guides/quickstart)

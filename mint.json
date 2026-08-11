@@ -1,8 +1,8 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "TestLab API Documentation",
+  "name": "TestLab",
   "logo": {
-    "dark": "/logo/dark.svg",
+    "dark": "/makelogo.png",
     "light": "/makelogo.png"
   },
   "favicon": "/favicon.ico",
@@ -19,14 +19,16 @@
       "dark": "#1a0b2e"
     }
   },
-  "css": [
-    "/styles.css"
-  ],
+  "css": ["/styles.css"],
   "topbarCtaButton": {
-    "name": "Dashboard",
+    "name": "Open TestLab",
     "url": "https://poc-test-management.vercel.app"
   },
   "tabs": [
+    {
+      "name": "Docs",
+      "url": "docs"
+    },
     {
       "name": "API Reference",
       "url": "docs/api-reference"
@@ -38,10 +40,51 @@
   ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "Get started",
+      "pages": ["docs/introduction", "docs/authentication"]
+    },
+    {
+      "group": "Concepts",
       "pages": [
-        "docs/introduction",
-        "docs/authentication"
+        "docs/concepts/overview",
+        "docs/concepts/project",
+        "docs/concepts/case",
+        "docs/concepts/suite",
+        "docs/concepts/execution",
+        "docs/concepts/evidence",
+        "docs/concepts/api-key",
+        "docs/concepts/portable-catalog",
+        "docs/concepts/reporting-env"
+      ]
+    },
+    {
+      "group": "Web app",
+      "pages": [
+        "docs/web-app/overview",
+        "docs/web-app/login",
+        "docs/web-app/cases",
+        "docs/web-app/suites",
+        "docs/web-app/runs",
+        "docs/web-app/compare",
+        "docs/web-app/project-settings",
+        "docs/web-app/cli-device-login"
+      ]
+    },
+    {
+      "group": "CLI & SDK",
+      "pages": [
+        "docs/cli-sdk/overview",
+        "docs/cli-sdk/cli-login-init",
+        "docs/cli-sdk/playwright",
+        "docs/cli-sdk/client"
+      ]
+    },
+    {
+      "group": "CI & automations",
+      "pages": [
+        "docs/ci-automations/overview",
+        "docs/ci-automations/github-actions",
+        "docs/ci-automations/automations"
       ]
     },
     {
@@ -101,12 +144,10 @@
     },
     {
       "group": "Reports",
-      "pages": [
-        "docs/api-reference/reports/pdf"
-      ]
+      "pages": ["docs/api-reference/reports/pdf"]
     },
     {
-      "group": "Integration Guides",
+      "group": "Guides",
       "pages": [
         "docs/guides/quickstart",
         "docs/guides/ci-cd-integration",

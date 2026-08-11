@@ -1,0 +1,26 @@
+---
+title: Project
+description: "Tenancy boundary for TestLab data and API keys"
+---
+
+A **Project** scopes cases, suites, executions, members, and API keys.
+Requests from the web client and from CI include project context via
+`X-Project-Id` (project id **or** slug).
+
+## In the UI
+
+Use the project switcher in the sidebar. Project settings live under
+**Project → General / Members / API Keys / Automation**.
+
+## Roles (Current)
+
+| Role     | Intent                                 |
+| -------- | -------------------------------------- |
+| `owner`  | Manage settings and member roles       |
+| `editor` | Create/update/delete project test data |
+| `viewer` | Read-only                              |
+
+<Info>
+  Role-based restrictions are still limited in places — treat roles as the
+  intended model, and verify sensitive actions in your environment.
+</Info>

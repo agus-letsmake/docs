@@ -1,0 +1,18 @@
+---
+title: Evidence
+description: "Attachments and observed step screenshots for a result"
+---
+
+**Evidence** is the reviewable artifact trail for a case result: file attachments
+and observed step screenshots (walkthrough).
+
+With `TESTLAB_PUSH=1`, the Client enables evidence by default. Opt out with
+`TESTLAB_EVIDENCE=0`. Modes: `failures` (default), `critical`, or `all`.
+
+HTTP surfaces (Observed):
+
+- `POST /api/attachments/upload` — result-level attachments
+- `POST /api/evidence/v1/ingest` — case attempt / observed steps
+- `POST /api/evidence/v1/steps/:stepId/artifacts` — step screenshots
+
+See the [Client package](/docs/cli-sdk/client) for helpers.

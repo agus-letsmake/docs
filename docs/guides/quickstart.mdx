@@ -1,197 +1,51 @@
 ---
 title: Quick Start Guide
-description: 'Get started with the TestLab API in 5 minutes'
+description: "Report results in minutes with CLI + Playwright"
 ---
 
 ## Prerequisites
 
-Before you begin, make sure you have:
-- A TestLab account
-- Access to the TestLab dashboard
+- Access to a TestLab instance
+- Node 20+
+- A Playwright project (or use the Client package directly)
 
-## Step 1: Generate an API Key
-
-<Steps>
-  <Step title="Log in to TestLab">
-    Navigate to your TestLab instance and sign in
-  </Step>
-  <Step title="Go to Settings">
-    Click on the Settings menu item
-  </Step>
-  <Step title="Create API Key">
-    In the API Keys section, click "Create New API Key"
-  </Step>
-  <Step title="Name and Save">
-    Give it a name like "Quick Start Test" and save the key immediately
-  </Step>
-</Steps>
-
-<Warning>
-  The API key is only shown once! Copy it now and store it securely.
-</Warning>
-
-## Step 2: Test Your Connection
-
-Verify your API key works by listing test cases:
+## Step 1: CLI setup
 
 ```bash
-curl -X GET https://testlab.letsmake.com/api/test-cases \
-  -H "X-API-Key: tlk_your_api_key_here"
+npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
+npx testlab login --url https://your-testlab-host
+npx testlab init
 ```
 
-You should receive a JSON response with your test cases (or an empty array if you haven't created any yet).
+This writes `TESTLAB_*` reporting env. Details: [CLI login + init](/docs/cli-sdk/cli-login-init).
 
-## Step 3: Create Your First Test Case
+## Step 2: Import cases
 
-Create a simple login test case:
+In the web app, open **Cases → Import / Export** and load a
+[Portable Catalog](/docs/concepts/portable-catalog) with automation keys.
+
+## Step 3: Register the reporter
+
+```ts
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  use: { screenshot: "on" },
+  reporter: [["list"], ["@ovenbits/make-testlab-playwright"]],
+});
+```
+
+## Step 4: Push a run
 
 ```bash
-curl -X POST https://testlab.letsmake.com/api/test-cases \
-  -H "X-API-Key: tlk_your_api_key_here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "User can login with valid credentials",
-    "description": "Verify that users can successfully log in with correct credentials",
-    "preconditions": "User account exists in the system",
-    "steps": [
-      {
-        "id": "step1",
-        "description": "Navigate to login page",
-        "expectedResult": "Login form is displayed"
-      },
-      {
-        "id": "step2",
-        "description": "Enter valid username and password",
-        "expectedResult": "Credentials are accepted"
-      },
-      {
-        "id": "step3",
-        "description": "Click login button",
-        "expectedResult": "User is redirected to dashboard"
-      }
-    ],
-    "labels": ["authentication", "critical"],
-    "automationStatus": "not_automated"
-  }'
+export TESTLAB_PUSH=1
+npx playwright test
 ```
 
-Save the returned `id` - you'll need it for the next steps.
+Review the run under **Runs** in the web app.
 
-## Step 4: Create a Test Suite
+## Prefer API-only?
 
-Group your test cases into a suite:
-
-```bash
-curl -X POST https://testlab.letsmake.com/api/test-suites \
-  -H "X-API-Key: tlk_your_api_key_here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Authentication Tests",
-    "description": "Test suite for user authentication features",
-    "testCaseIds": ["YOUR_TEST_CASE_ID_HERE"]
-  }'
-```
-
-Save the suite `id` for the next step.
-
-## Step 5: Create a Test Execution
-
-Start a test execution run:
-
-```bash
-curl -X POST https://testlab.letsmake.com/api/executions \
-  -H "X-API-Key: tlk_your_api_key_here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "suiteId": "YOUR_SUITE_ID_HERE",
-    "suiteName": "Authentication Tests",
-    "testCaseIds": ["YOUR_TEST_CASE_ID_HERE"],
-    "name": "Quick Start Test Run",
-    "version": "v1.0.0",
-    "environment": "development"
-  }'
-```
-
-## Step 6: Update Test Results
-
-Mark a test as passed or failed:
-
-```bash
-curl -X POST https://testlab.letsmake.com/api/executions/YOUR_EXECUTION_ID/results \
-  -H "X-API-Key: tlk_your_api_key_here" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "results": [
-      {
-        "testCaseId": "YOUR_TEST_CASE_ID_HERE",
-        "status": "pass",
-        "notes": "Login successful, all steps passed"
-      }
-    ]
-  }'
-```
-
-## Congratulations! 🎉
-
-You've successfully:
-- ✅ Created an API key
-- ✅ Created a test case
-- ✅ Created a test suite
-- ✅ Started a test execution
-- ✅ Recorded test results
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="CI/CD Integration" icon="code-branch" href="/guides/ci-cd-integration">
-    Learn how to automate test result pushing from your CI/CD pipeline
-  </Card>
-  <Card title="API Reference" icon="book" href="/api-reference">
-    Explore all available API endpoints
-  </Card>
-  <Card title="Examples" icon="lightbulb" href="/guides/examples">
-    See common use cases and code examples
-  </Card>
-  <Card title="Automated Results" icon="robot" href="/api-reference/automated-results/push">
-    Push automated test results from Jest, Cypress, etc.
-  </Card>
-</CardGroup>
-
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion title="401 Unauthorized Error">
-    - Verify your API key is correct
-    - Check that the key is active (not disabled)
-    - Ensure you're including the `X-API-Key` header
-  </Accordion>
-
-  <Accordion title="404 Not Found Error">
-    - Verify the resource ID exists
-    - Check that you're using the correct endpoint URL
-    - Ensure you have access to the resource
-  </Accordion>
-
-  <Accordion title="400 Bad Request Error">
-    - Check your request body JSON is valid
-    - Verify all required fields are included
-    - Ensure field values match the expected format
-  </Accordion>
-</AccordionGroup>
-
-## Environment Variables
-
-For security, store your API key in an environment variable:
-
-```bash
-# .env
-TESTLAB_API_KEY=tlk_your_api_key_here
-TESTLAB_BASE_URL=https://testlab.letsmake.com
-```
-
-Then use it in your scripts:
-
-```javascript
-const API_KEY = process.env.TESTLAB_API_KEY;
-const BASE_URL = process.env.TESTLAB_BASE_URL;
-```
+See [Authentication](/docs/authentication) and the
+[API reference](/docs/api-reference/test-cases/list). Older curl-only recipes remain
+in [Examples](/docs/guides/examples).

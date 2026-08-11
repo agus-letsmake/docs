@@ -1,0 +1,36 @@
+---
+title: Playwright SDK
+description: "Register the reporter and map automation keys"
+---
+
+Package: `@ovenbits/make-testlab-playwright`
+
+## Registration
+
+```ts
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  use: {
+    screenshot: "on", // needed for Observed evidence screenshots
+  },
+  reporter: [["list"], ["@ovenbits/make-testlab-playwright"]],
+});
+```
+
+## Automation keys
+
+Keys are free-form. Defaults match letter+digit tokens in **tags first**, then
+**title**. Override with `automationKeyPattern` or `resolveAutomationKey`.
+
+## Env
+
+Requires Client reporting env (`TESTLAB_URL`, `TESTLAB_API_KEY`,
+`TESTLAB_PROJECT_ID`, `TESTLAB_PUSH=1`) plus execution helpers such as
+`TESTLAB_EXECUTION_ID` / `TESTLAB_DEFER_COMPLETE` as described in
+[Reporting env](/docs/concepts/reporting-env).
+
+## Related
+
+- [Client package](/docs/cli-sdk/client)
+- [CI GitHub Actions](/docs/ci-automations/github-actions)

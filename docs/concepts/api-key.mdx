@@ -1,0 +1,24 @@
+---
+title: API key
+description: "Project-scoped credential for CI and SDKs"
+---
+
+**API keys** authenticate machine clients. Prefer project-scoped keys created
+under **Project → API Keys**. The full key is shown once at creation (`tlk_` prefix).
+
+## Headers
+
+```bash
+X-API-Key: tlk_your_api_key_here
+X-Project-Id: money-app
+```
+
+Always send `X-Project-Id` with a project-scoped key.
+
+CLI init issues a CI API key and writes it into reporting env — separate from the
+short-lived user credential used by CLI login.
+
+## Related
+
+- [Authentication](/docs/authentication)
+- [Project settings](/docs/web-app/project-settings)
