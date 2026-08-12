@@ -12,39 +12,40 @@ review **evidence**, and push automated results from CI via the **Client** and
 
 ### Who it is for
 
-| Role | Start here |
-| --- | --- |
-| Make engineer adopting TestLab | [CLI login + init](/docs/cli-sdk/cli-login-init) → [Cases](/docs/web-app/cases) |
-| CI / automation author | [Reporting env](/docs/concepts/reporting-env) → [Playwright SDK](/docs/cli-sdk/playwright) |
-| Agent / automation | [API authentication](/docs/authentication) → [API reference](/docs/api-reference/test-cases/list) |
+| Role                           | Start here                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Make engineer adopting TestLab | [CLI login + init](/docs/cli-sdk/cli-login-init) → [Cases](/docs/web-app/cases)                   |
+| CI / automation author         | [Reporting env](/docs/concepts/reporting-env) → [Playwright SDK](/docs/cli-sdk/playwright)        |
+| Agent / automation             | [API authentication](/docs/authentication) → [API reference](/docs/api-reference/test-cases/list) |
 
 ## Ten-minute path
 
 <Steps>
   <Step title="Sign in">
-    Open TestLab and sign in with your `@letsmake.com` Google account.
-    See [Login](/docs/web-app/login).
+    Open TestLab and sign in with your `@letsmake.com` Google account. See
+    [Login](/docs/web-app/login).
   </Step>
   <Step title="CLI setup">
-    Install `@ovenbits/make-testlab-playwright`, then run `npx testlab login` and
-    `npx testlab init` to write `TESTLAB_*` reporting env. See
-    [CLI login + init](/docs/cli-sdk/cli-login-init).
+    Install `@ovenbits/make-testlab-playwright`, then run `npx testlab login`
+    and `npx testlab init` to write `TESTLAB_*` reporting env. See [CLI login +
+    init](/docs/cli-sdk/cli-login-init).
   </Step>
   <Step title="Import cases">
-    Use **Cases → Import / Export** to load a [Portable Catalog](/docs/concepts/portable-catalog)
-    (automation keys required).
+    Use **Cases → Import / Export** to load a [Portable
+    Catalog](/docs/concepts/portable-catalog) (automation keys required).
   </Step>
   <Step title="Report results">
-    Register the Playwright reporter and run tests with `TESTLAB_PUSH=1`.
-    Review outcomes under **Runs**.
+    Register the Playwright reporter, start an execution, then run tests with
+    `TESTLAB_PUSH=1`. Review outcomes under **Runs**. See [Quick
+    start](/docs/guides/quickstart).
   </Step>
 </Steps>
 
 ## What not to use
 
 <Warning>
-  The in-app **Bootstrap** wizard is retired (`/bootstrap` redirects home).
-  Do not use the old package name `make-testlab-playwright-reporter` — use
+  The in-app **Bootstrap** wizard is retired (`/bootstrap` redirects home). Do
+  not use the old package name `make-testlab-playwright-reporter` — use
   `@ovenbits/make-testlab-playwright`.
 </Warning>
 

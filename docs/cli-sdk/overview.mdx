@@ -8,7 +8,9 @@ description: "Setup-only CLI plus Client and Playwright packages"
 | `@ovenbits/make-testlab-playwright` | Playwright adapter + `testlab` CLI (`login` / `init`)  |
 | `@ovenbits/make-testlab-client`     | Shared reporting brain (start/push/complete, evidence) |
 
-Install from GitHub Packages (see each package README for `.npmrc` auth):
+Install from GitHub Packages. TestLab login does **not** authenticate npm —
+export `NODE_AUTH_TOKEN` with `read:packages` (SSO-authorize the org). See
+[Playwright SDK → Install](/docs/cli-sdk/playwright#install).
 
 ```bash
 npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
@@ -27,11 +29,13 @@ npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
 
 ## What the Playwright path covers
 
-| Concern               | Where documented                                                                                      |
-| --------------------- | ----------------------------------------------------------------------------------------------------- |
-| Send results          | [Playwright SDK → How results are sent](/docs/cli-sdk/playwright#how-results-are-sent)                |
-| Attach screenshots    | [Playwright SDK → Screenshots and videos](/docs/cli-sdk/playwright#screenshots-and-videos)            |
-| Test steps / Observed | [Playwright SDK → Test steps](/docs/cli-sdk/playwright#test-steps-observed-evidence)                  |
-| Evidence policy       | [Evidence](/docs/concepts/evidence)                                                                   |
-| Env vars              | [Reporting env](/docs/concepts/reporting-env)                                                         |
-| CI/CD                 | [GitHub Actions](/docs/ci-automations/github-actions) + [CI/CD guide](/docs/guides/ci-cd-integration) |
+| Concern                    | Where documented                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Send results               | [Playwright SDK → How results are sent](/docs/cli-sdk/playwright#how-results-are-sent)                |
+| Attach screenshots         | [Playwright SDK → Screenshots and videos](/docs/cli-sdk/playwright#screenshots-and-videos)            |
+| Test steps / Observed      | [Playwright SDK → Test steps](/docs/cli-sdk/playwright#test-steps-observed-evidence)                  |
+| Evidence policy            | [Evidence](/docs/concepts/evidence)                                                                   |
+| Env vars                   | [Reporting env](/docs/concepts/reporting-env)                                                         |
+| Catalog / suite membership | [Portable Catalog](/docs/concepts/portable-catalog)                                                   |
+| Non-Playwright runners     | [Client → Non-Playwright](/docs/cli-sdk/client#non-playwright-runners-maestro-junit-custom)           |
+| CI/CD                      | [GitHub Actions](/docs/ci-automations/github-actions) + [CI/CD guide](/docs/guides/ci-cd-integration) |

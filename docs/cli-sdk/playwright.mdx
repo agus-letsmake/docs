@@ -13,13 +13,28 @@ Peer dependency: `@playwright/test` >= 1.52.0. Depends on
 
 ## Install
 
-Packages publish to **GitHub Packages** (`@ovenbits` scope). Point npm at
-`https://npm.pkg.github.com` and authenticate with a token that has
-`read:packages` (plus SSO authorize for the org when required).
+Packages publish to **GitHub Packages** (`@ovenbits` scope). TestLab / Google
+login does **not** authenticate npm.
+
+Checked-in `.npmrc`:
+
+```ini
+@ovenbits:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
 
 ```bash
+gh auth login
+gh auth refresh -h github.com -s read:packages
+# If the org uses SAML SSO, authorize the token for that org
+export NODE_AUTH_TOKEN="$(gh auth token)"
 npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
 ```
+
+| Error                     | Meaning                              | What to do                                       |
+| ------------------------- | ------------------------------------ | ------------------------------------------------ |
+| `401` / `unauthenticated` | Missing or invalid token             | Export `NODE_AUTH_TOKEN`                         |
+| `403` / `read_package`    | Token works; package ACL denies read | SSO-authorize; ask an org admin for package Read |
 
 The package ships compiled CommonJS so Playwright’s `require.resolve` reporter
 loading works.
@@ -73,6 +88,9 @@ The reporter does **not** invent an execution. CI (or a local wrapper) must:
 3. Optionally set `TESTLAB_DEFER_COMPLETE=1` and call
    [`completeExecution`](/docs/cli-sdk/client) in a cleanup step
 
+If `TESTLAB_EXECUTION_ID` is unset, the reporter **no-ops** (no pushes). Local
+dev typically leaves `TESTLAB_PUSH` unset so runs stay offline.
+
 On each **final** test attempt, the reporter:
 
 1. Resolves the automation key
@@ -100,6 +118,36 @@ pending failure as `fail` and sets a non-zero exit code for unrecovered failures
 Missing automation keys are logged to stderr and skipped (no HTTP push).
 
 With `TESTLAB_PUSH_REQUIRED=1`, push HTTP failures also set `process.exitCode = 1`.
+
+### End of run
+
+After waiting for in-flight pushes, `onEnd`:
+
+1. Reports any **unfinished** expected automation keys as `blocked`
+   (`errorMessage`: test did not finish before Playwright ended)
+2. Unless `TESTLAB_DEFER_COMPLETE=1`, calls `pushResults` with an empty
+   `results` array and `autoComplete: true`
+3. Fails the Playwright run if unrecovered retry-then-skip failures remain
+
+Unfinished / extra suite rows stay `todo` until reported. Extra cases on the
+suite that this job never runs **block autoComplete** — keep suite membership
+aligned with the catalog you execute. See
+[Portable Catalog](/docs/concepts/portable-catalog).
+
+### Evidence attach is a second push
+
+Status is pushed first. Result-row files are uploaded via `uploadAttachment`,
+then a **second** `pushResults` attaches them to the same `automationKey`.
+Kinds:
+
+| Kind                     | When                                     |
+| ------------------------ | ---------------------------------------- |
+| `failure-screenshot`     | Failed result screenshot                 |
+| `test-screenshot`        | Pass (or non-fail) result screenshot     |
+| `critical-success-video` | Success video allowed by evidence policy |
+
+Observed step screenshots use `uploadStepScreenshot` and do not go through that
+second result push.
 
 ## Test steps (Observed evidence)
 
@@ -242,6 +290,18 @@ the last known identity until the final push.
 
 Exported helpers: `normalizeRunnerIdentity`,
 `resolveRunnerIdentityFromAnnotations`, annotation constants.
+
+## Extending the reporter
+
+`TestLabReporter` is a Playwright reporter class you can subclass. Override
+`onTestEnd`, then call `super.onTestEnd(test, result)` after any product-specific
+filtering (for example stripping screenshots on auth-failure messages).
+
+Also exported: `createAutomationKeyResolver` for the same key pattern the
+reporter uses.
+
+Do **not** upload MFA / signup UI. Prefer `TESTLAB_EVIDENCE_DENY` plus a local
+TTY-only helper that does **not** call package `runStep`.
 
 ## Environment
 

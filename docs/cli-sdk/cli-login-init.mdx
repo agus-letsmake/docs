@@ -12,8 +12,11 @@ The Playwright package ships a setup-only `testlab` binary. There is **no**
 npx testlab login --url https://your-testlab-host
 ```
 
-Opens [CLI device login](/docs/web-app/cli-device-login). Stores a short-lived user
-credential outside the repo.
+Opens [CLI device login](/docs/web-app/cli-device-login). Stores a short-lived
+user credential **outside the repo**:
+
+`$XDG_CONFIG_HOME/testlab/credentials.json` (or `~/.config/testlab/credentials.json`).
+File mode `0600`. This is not a CI API key and must never be copied into `.env`.
 
 ## Init
 

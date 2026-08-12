@@ -143,6 +143,31 @@ Policy helpers (env-driven, no product-prefix heuristics):
 
 Details: [Evidence](/docs/concepts/evidence).
 
+## Config and generic HTTP
+
+| Helper                            | Purpose                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `readTestLabConfig`               | Reads `TESTLAB_URL` / `TESTLAB_API_KEY` / `TESTLAB_PROJECT_ID` (https required except localhost) |
+| `testLabFetch`                    | Authenticated JSON request (`X-API-Key` + `X-Project-Id`)                                        |
+| `validateExecutionIdForGithubEnv` | Rejects execution ids that would break `GITHUB_ENV`                                              |
+
+Use `testLabFetch` for catalog upserts (`/api/test-cases`, suite membership) —
+the Client does not ship a dedicated sync CLI.
+
+## Non-Playwright runners (Maestro, JUnit, custom)
+
+Same lifecycle, no reporter:
+
+1. `startExecution({ suiteId, name })`
+2. For each finished case: `pushResults` with `automationKey` + `status`
+   (optional `runnerEmail` / `runnerPersonaKey`)
+3. Optional `uploadAttachment` / `ingestCaseAttempt` / `uploadStepScreenshot`
+4. `completeExecution(id, { forceReconcile: true })` from CI cleanup when
+   `TESTLAB_DEFER_COMPLETE=1`
+
+Map runner titles to catalog keys in your own mapping file. Do not invent
+`testCaseId` when the case already has an `automationKey`.
+
 ## Redaction
 
 `sanitizeErrorMessageForTestLab` strips tokens, passwords, and TestLab API keys

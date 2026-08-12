@@ -103,6 +103,13 @@ HTML/JUnit artifacts without TestLab HTTP.
 - Use `runObservedStep` for product walkthrough steps
 - Annotate `testlab:runnerEmail` / `testlab:runnerPersonaKey` when account-backed
 - Opt sensitive keys out via `TESTLAB_EVIDENCE_DENY` rather than uploading MFA UI
+- Keep suite membership equal to the catalog this job runs (`todo` rows block complete)
+
+## Catalog before live CI
+
+Import or upsert cases with matching `automationKey` values, then attach them
+to the suite id you pass to `startExecution`. Preview membership changes with a
+dry-run. See [Portable Catalog](/docs/concepts/portable-catalog).
 
 ## Automations batches
 

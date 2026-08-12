@@ -35,12 +35,19 @@ export default defineConfig({
 });
 ```
 
-## Step 4: Push a run
+## Step 4: Start an execution, then push
+
+The reporter needs `TESTLAB_EXECUTION_ID` from Client `startExecution`. A bare
+`npx playwright test` with only `TESTLAB_PUSH=1` will not create a run.
 
 ```bash
 export TESTLAB_PUSH=1
+# After startExecution writes TESTLAB_EXECUTION_ID:
 npx playwright test
 ```
+
+In CI, follow [GitHub Actions reporting](/docs/ci-automations/github-actions)
+(`start` → tests with `TESTLAB_DEFER_COMPLETE=1` → `completeExecution`).
 
 Review the run under **Runs** in the web app.
 
