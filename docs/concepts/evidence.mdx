@@ -1,18 +1,76 @@
 ---
 title: Evidence
-description: "Attachments and observed step screenshots for a result"
+description: "Observed steps, screenshots, videos, and evidence policy modes"
 ---
 
-**Evidence** is the reviewable artifact trail for a case result: file attachments
-and observed step screenshots (walkthrough).
+**Evidence** is the reviewable artifact trail for a case result: Observed step
+walkthroughs, per-step screenshots, result-row attachments, and optional success
+videos.
+
+## Enable / disable
 
 With `TESTLAB_PUSH=1`, the Client enables evidence by default. Opt out with
-`TESTLAB_EVIDENCE=0`. Modes: `failures` (default), `critical`, or `all`.
+`TESTLAB_EVIDENCE=0`.
 
-HTTP surfaces (Observed):
+Key gates (`TESTLAB_EVIDENCE_ALLOW` / `TESTLAB_EVIDENCE_DENY`) are
+**env/pattern-only** — the packages do not hardcode product prefixes. Use deny
+patterns to skip sensitive flows (for example MFA / signup UIs).
 
-- `POST /api/attachments/upload` — result-level attachments
-- `POST /api/evidence/v1/ingest` — case attempt / observed steps
-- `POST /api/evidence/v1/steps/:stepId/artifacts` — step screenshots
+## Modes (`TESTLAB_EVIDENCE_MODE`)
 
-See the [Client package](/docs/cli-sdk/client) for helpers.
+| Mode                 | Screenshots                                                                                           | Success videos                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `failures` (default) | Failure evidence when policy allows the key; result screenshots follow `shouldUploadResultScreenshot` | No                                                        |
+| `critical`           | Same screenshot gates                                                                                 | Only keys listed in `TESTLAB_CRITICAL_SUCCESS_VIDEO_KEYS` |
+| `all`                | Same screenshot gates                                                                                 | Success videos for keys that pass allow/deny              |
+
+Retention hint: `TESTLAB_EVIDENCE_RETENTION_DAYS` (default `10`) is sent as
+storage metadata with uploads.
+
+## Observed steps (walkthrough)
+
+The Playwright reporter ingests a case attempt with ordered steps:
+
+1. Prefer human `test.step` titles (`runObservedStep` / package `runStep`)
+2. Else flatten Playwright auto steps
+3. Else synthesize a single `Test result` step
+
+HTTP: `POST /api/evidence/v1/ingest` via Client `ingestCaseAttempt`.
+
+## Screenshots
+
+| Source               | Attachment / API                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Per-step             | Playwright attachment name `testlab-step-screenshot` → `uploadStepScreenshot`             |
+| End-of-test fallback | Playwright `screenshot` attachment → Observed step + `uploadAttachment` on the result row |
+
+Playwright must be configured with `use.screenshot: "on"` or
+`"only-on-failure"` for end-of-test fallbacks. Prefer `runObservedStep` so each
+human step gets its own shot.
+
+Failure screenshot uploads also respect `shouldUploadFailureEvidence` (mode +
+allow/deny). Pass screenshots respect `shouldUploadResultScreenshot`.
+
+## Videos
+
+Success videos upload when:
+
+1. Evidence is enabled and the key passes allow/deny
+2. Mode is `critical` (key in `TESTLAB_CRITICAL_SUCCESS_VIDEO_KEYS`) or `all`
+3. Playwright attached a `video` (enable recording for that test/project)
+
+Kind stored on the result: `critical-success-video`.
+
+## HTTP surfaces
+
+| Endpoint                                        | Helper                 |
+| ----------------------------------------------- | ---------------------- |
+| `POST /api/attachments/upload`                  | `uploadAttachment`     |
+| `POST /api/evidence/v1/ingest`                  | `ingestCaseAttempt`    |
+| `POST /api/evidence/v1/steps/:stepId/artifacts` | `uploadStepScreenshot` |
+
+## Related
+
+- [Playwright SDK](/docs/cli-sdk/playwright) — `runObservedStep`, fixtures, reporter behavior
+- [Client package](/docs/cli-sdk/client) — helpers and policy functions
+- [Reporting env](/docs/concepts/reporting-env)

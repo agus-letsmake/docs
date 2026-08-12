@@ -1,23 +1,58 @@
 ---
 title: Reporting env
-description: "TESTLAB_* variables consumed by the Client package"
+description: "TESTLAB_* variables consumed by the Client and Playwright reporter"
 ---
 
 **Reporting env** is the set of environment variables the Client package reads
-to push results. CLI init upserts only `TESTLAB_*` keys and leaves other `.env`
-variables untouched.
+to push results and evidence. CLI init upserts only `TESTLAB_*` keys and leaves
+other `.env` variables untouched.
 
-| Variable | Purpose |
-| --- | --- |
-| `TESTLAB_URL` | Base URL (https, or http://localhost) |
-| `TESTLAB_API_KEY` | Project-scoped API key |
-| `TESTLAB_PROJECT_ID` | Project id or slug |
-| `TESTLAB_PUSH` | Must be `1` to enable network |
-| `TESTLAB_EVIDENCE` | Opt out with `0` (on by default when push=1) |
-| `TESTLAB_EVIDENCE_MODE` | `failures` (default), `critical`, or `all` |
-| `TESTLAB_DEFER_COMPLETE` | `1` when CI cleanup owns complete/reconcile |
-| `TESTLAB_EXECUTION_ID` | Set after `startExecution` (Playwright path) |
-| `TESTLAB_PUSH_REQUIRED` | `1` to fail the process on push failures |
+## Required to push
 
-Suite id is optional depending on how you start the execution — do not treat it
-as required for every run.
+| Variable             | Purpose                                                     |
+| -------------------- | ----------------------------------------------------------- |
+| `TESTLAB_URL`        | Base URL (`https://…`, or `http://localhost` / `127.0.0.1`) |
+| `TESTLAB_API_KEY`    | Project-scoped API key (`X-API-Key`)                        |
+| `TESTLAB_PROJECT_ID` | Project id **or** slug (`X-Project-Id`)                     |
+| `TESTLAB_PUSH`       | Must be `1` to enable network; otherwise helpers no-op      |
+
+## Execution lifecycle
+
+| Variable                 | Purpose                                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `TESTLAB_EXECUTION_ID`   | Set after `startExecution`; required by the Playwright reporter                                                               |
+| `TESTLAB_DEFER_COMPLETE` | `1` when CI cleanup owns `completeExecution` / reconcile                                                                      |
+| `TESTLAB_PUSH_REQUIRED`  | `1` to fail the process on push / HTTP failures                                                                               |
+| `TESTLAB_SUITE_ID`       | Optional suite id passed into `startExecution` (runners may use product-specific names such as `TESTLAB_PLAYWRIGHT_SUITE_ID`) |
+| `TESTLAB_VERSION`        | Optional version stamped on start                                                                                             |
+| `TESTLAB_ENV`            | Optional environment label (default `ci`)                                                                                     |
+| `TESTLAB_BATCH_ID`       | Optional Automations batch id (also accepted on `startExecution` input)                                                       |
+| `TESTLAB_BATCH_ITEM_ID`  | Optional Automations batch item id                                                                                            |
+
+GitHub Actions automatically contributes `GITHUB_SHA`, `GITHUB_REF_NAME`,
+`GITHUB_RUN_ID`, `GITHUB_RUN_NUMBER`, and `GITHUB_SERVER_URL` /
+`GITHUB_REPOSITORY` for `gitSha`, `branch`, `buildNumber`, and `ciRunUrl` when
+those fields are not passed explicitly.
+
+## Evidence
+
+| Variable                              | Purpose                                                                       |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| `TESTLAB_EVIDENCE`                    | Opt out with `0` (evidence is **on** by default when `TESTLAB_PUSH=1`)        |
+| `TESTLAB_EVIDENCE_MODE`               | `failures` (default), `critical`, or `all`                                    |
+| `TESTLAB_EVIDENCE_ALLOW`              | Optional comma-separated regex allow patterns                                 |
+| `TESTLAB_EVIDENCE_DENY`               | Optional comma-separated regex deny patterns                                  |
+| `TESTLAB_CRITICAL_SUCCESS_VIDEO_KEYS` | Comma-separated automation keys eligible for success video in `critical` mode |
+| `TESTLAB_EVIDENCE_RETENTION_DAYS`     | Retention hint metadata (default `10`)                                        |
+
+Policy evaluation:
+
+1. If a key matches any **deny** pattern → no evidence for that key
+2. Else if **allow** patterns are set → key must match at least one
+3. Else → allowed
+
+Patterns are treated as case-insensitive regexes; invalid regex falls back to
+case-insensitive exact match.
+
+See [Evidence](/docs/concepts/evidence) for how modes affect screenshots vs
+videos, and [Playwright SDK](/docs/cli-sdk/playwright) for attachment behavior.
