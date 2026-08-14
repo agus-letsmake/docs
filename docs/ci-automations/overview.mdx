@@ -3,12 +3,14 @@ title: CI & automations overview
 description: "Push results from pipelines and trigger GitHub workflows"
 ---
 
-Two related surfaces:
+Three related surfaces:
 
 1. **Reporting from CI** — Client / Playwright packages with `TESTLAB_*` secrets
 2. **Automations** — in-app GitHub App wiring to dispatch workflows (`/automations`
    and Project → Automation)
+3. **Live Slack run cards** — TestLab posts and updates one Slack plan per
+   automated execution; enable per project, not in CI secrets
 
 Start with [GitHub Actions](/docs/ci-automations/github-actions) for the reporting
 path, then [Automations](/docs/ci-automations/automations) if you need TestLab to
-trigger workflows.
+trigger workflows. Slack: [Live Slack run cards](/docs/guides/live-slack-run-cards).

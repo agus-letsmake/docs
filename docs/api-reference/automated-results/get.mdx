@@ -58,6 +58,7 @@ if data["summary"]["fail"] > 0:
 
 print(f"All tests passed! ({data['summary']['pass']}/{data['summary']['total']})")
 ```
+
 </RequestExample>
 
 <ResponseExample>
@@ -117,6 +118,7 @@ print(f"All tests passed! ({data['summary']['pass']}/{data['summary']['total']})
   "error": "Execution not found"
 }
 ```
+
 </ResponseExample>
 
 ## Response Fields
@@ -240,19 +242,8 @@ This endpoint is particularly useful for:
     fi
 ```
 
-### Posting Results to Slack
+### Slack
 
-```javascript
-const { summary } = await getExecutionResults(executionId);
-const emoji = summary.fail > 0 ? '❌' : '✅';
-
-await postToSlack({
-  text: `${emoji} Test Results: ${summary.pass}/${summary.total} passed`,
-  attachments: [{
-    fields: [
-      { title: 'Passed', value: summary.pass, short: true },
-      { title: 'Failed', value: summary.fail, short: true }
-    ]
-  }]
-});
-```
+Do not post from CI for the live plan card. TestLab updates Slack itself when
+**Live run card** is enabled on the project. See
+[Live Slack run cards](/docs/guides/live-slack-run-cards).

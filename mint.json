@@ -160,6 +160,7 @@
       "pages": [
         "docs/guides/quickstart",
         "docs/guides/cursor-mcp",
+        "docs/guides/live-slack-run-cards",
         "docs/guides/ci-cd-integration",
         "docs/guides/examples"
       ]
