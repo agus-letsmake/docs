@@ -1,0 +1,51 @@
+---
+title: Cursor MCP
+description: "Connect Cursor to TestLab over the hosted read-only MCP endpoint"
+---
+
+Use this when you want Cursor to inspect TestLab cases, suites, and runs **without cloning the
+TestLab repo**. This is a read-only adapter. It cannot create cases, start runs, attach evidence,
+or trigger CI.
+
+## Prerequisites
+
+- A TestLab account
+- A project-scoped [API key](/docs/concepts/api-key) (**Project → API Keys**)
+- The project **id** or **slug** (send it as `X-Project-Id`)
+
+## Cursor config
+
+Add this to Cursor MCP settings (user or project `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "testlab": {
+      "url": "https://make-testlab.vercel.app/api/mcp",
+      "headers": {
+        "X-API-Key": "tlk_your_key",
+        "X-Project-Id": "your-project-id-or-slug"
+      }
+    }
+  }
+}
+```
+
+Reload MCP. The `testlab` server should show as connected.
+
+Each person should use their own key. Do not paste a shared team key into a committed file.
+
+See [Authentication](/docs/authentication) for header rules.
+
+## Smoke
+
+1. Call `testlab_get_context` — you should see the project name and `readOnly: true`.
+2. Call `testlab_list_test_cases` with `limit: 1`.
+3. Confirm the `tlk_` key never appears in tool output.
+
+## Docs vs data
+
+| Server              | URL                                        | What it does            |
+| ------------------- | ------------------------------------------ | ----------------------- |
+| TestLab product MCP | `https://make-testlab.vercel.app/api/mcp`  | Reads your project data |
+| Mintlify docs MCP   | `https://make-testlab.vercel.app/docs/mcp` | Searches these docs     |

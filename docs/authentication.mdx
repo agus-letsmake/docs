@@ -33,6 +33,11 @@ curl -X GET https://testlab.letsmake.com/api/test-cases \
 - Prefix: `tlk_`
 - Example shape: `tlk_…` (base64url material after the prefix)
 
+## Cursor MCP
+
+Cursor can read project data over a hosted MCP URL with the same `X-API-Key` and
+`X-Project-Id` headers. Setup: [Cursor MCP](/docs/guides/cursor-mcp).
+
 ## Bearer token (user sessions)
 
 ```bash
@@ -60,4 +65,5 @@ https://testlab.letsmake.com/api
 ```bash Development
 http://localhost:3000/api
 ```
+
 </CodeGroup>

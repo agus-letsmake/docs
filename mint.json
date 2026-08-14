@@ -159,6 +159,7 @@
       "group": "Guides",
       "pages": [
         "docs/guides/quickstart",
+        "docs/guides/cursor-mcp",
         "docs/guides/ci-cd-integration",
         "docs/guides/examples"
       ]
