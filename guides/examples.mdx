@@ -1,0 +1,373 @@
+---
+title: Code Examples
+description: "Write Playwright tests, start a run, and report results from CI"
+---
+
+End-to-end path used by product CI: catalog key → Playwright test →
+`startExecution` → reporter `pushResults` → `completeExecution`.
+
+Related: [Playwright SDK](/cli-sdk/playwright),
+[GitHub Actions](/ci-automations/github-actions),
+[Reporting env](/concepts/reporting-env).
+
+## 1. Catalog case
+
+Import this (or a larger array) via **Cases → Import / Export**. The key in the
+test tag must match `automationKey`.
+
+```json
+[
+  {
+    "automationKey": "DEMO-01",
+    "title": "DEMO-01 - Home heading is visible",
+    "epicOrFeature": "playwright/demo",
+    "sourceFile": "home.spec.ts",
+    "steps": [
+      {
+        "id": "step-1",
+        "description": "Open home",
+        "expectedResult": "Heading visible"
+      }
+    ]
+  }
+]
+```
+
+Attach the imported cases to the suite you will pass to `startExecution`.
+
+## 2. Install and `.npmrc`
+
+```ini
+@ovenbits:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+```bash
+export NODE_AUTH_TOKEN="$(gh auth token)"
+npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
+npx testlab login
+npx testlab init
+```
+
+## 3. Playwright config
+
+Register the reporter only when pushing. Enable screenshots so Observed evidence
+has a fallback.
+
+```ts
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests",
+  use: {
+    screenshot: "on",
+    video: "off",
+    trace: "off",
+  },
+  reporter: [
+    ["list"],
+    ...(process.env.TESTLAB_PUSH === "1"
+      ? ([["@ovenbits/make-testlab-playwright"]] as const)
+      : []),
+  ],
+});
+```
+
+Optional: constrain keys to your catalog pattern:
+
+```ts
+[
+  "@ovenbits/make-testlab-playwright",
+  {
+    automationKeyPattern: "(?:DEMO|CA|AUTH)\\d+(?:-[A-Z]+)?",
+  },
+];
+```
+
+## 4. Write a reporting test
+
+Bind the page once so every `runObservedStep` attaches a screenshot. Put the
+catalog key in a **tag** (preferred) or in the title.
+
+```ts
+// tests/helpers/test.ts
+import { test as base } from "@playwright/test";
+import { bindObservedPage } from "@ovenbits/make-testlab-playwright";
+
+export const test = base.extend({
+  page: async ({ page }, use) => {
+    bindObservedPage(page);
+    try {
+      await use(page);
+    } finally {
+      bindObservedPage(null);
+    }
+  },
+});
+
+export { expect } from "@playwright/test";
+```
+
+```ts
+// tests/home.spec.ts
+import { expect } from "@playwright/test";
+import {
+  RUNNER_EMAIL_ANNOTATION,
+  runObservedStep,
+} from "@ovenbits/make-testlab-playwright";
+import { test } from "./helpers/test";
+
+test("home heading is visible", { tag: "@DEMO-01" }, async ({ page }) => {
+  test.info().annotations.push({
+    type: RUNNER_EMAIL_ANNOTATION,
+    description: "demo.runner@example.com",
+  });
+
+  await runObservedStep(page, "demo", "Open home", async () => {
+    await page.goto("/");
+  });
+
+  await runObservedStep(page, "demo", "Assert heading", async () => {
+    await expect(page.getByRole("heading")).toBeVisible();
+  });
+});
+```
+
+Without `TESTLAB_PUSH=1` this is a normal Playwright test (HTML/list reporters
+only). The TestLab reporter maps `@DEMO-01` → `DEMO-01` and pushes on the
+**final** attempt.
+
+Skip step screenshots for MFA / signup: do not call `runObservedStep` on those
+paths, and deny the keys with `TESTLAB_EVIDENCE_DENY`.
+
+## 5. Local: start, run, complete
+
+The reporter does not create an execution. Wrap the run:
+
+```js
+// scripts/testlab-playwright.mjs
+import { spawn } from "node:child_process";
+import {
+  completeExecution,
+  startExecution,
+} from "@ovenbits/make-testlab-client";
+
+process.env.TESTLAB_PUSH = "1";
+process.env.TESTLAB_DEFER_COMPLETE = "1";
+
+const started = await startExecution({
+  suiteId: process.env.TESTLAB_SUITE_ID,
+  name: `local-${new Date().toISOString()}`,
+});
+
+if (started.skipped || !started.executionId) {
+  throw new Error(
+    "startExecution failed — check TESTLAB_URL / API key / project",
+  );
+}
+
+process.env.TESTLAB_EXECUTION_ID = started.executionId;
+
+const child = spawn("npx", ["playwright", "test"], {
+  stdio: "inherit",
+  env: process.env,
+});
+
+const code = await new Promise((resolve) => {
+  child.on("close", resolve);
+});
+
+await completeExecution(started.executionId, { forceReconcile: true });
+process.exit(code ?? 1);
+```
+
+```bash
+export TESTLAB_PUSH=1
+export TESTLAB_SUITE_ID=suite_xxx   # from Suites UI after import
+node scripts/testlab-playwright.mjs
+```
+
+Open **Runs** in TestLab. You should see `DEMO-01` with Observed steps and
+screenshots.
+
+## 6. GitHub Actions
+
+Repo **variable**: `TESTLAB_URL`, `TESTLAB_PROJECT_ID`, `TESTLAB_SUITE_ID`
+(or `TESTLAB_PLAYWRIGHT_SUITE_ID`). Repo **secret**: `TESTLAB_API_KEY`,
+`NODE_AUTH_TOKEN` (`read:packages`).
+
+```yaml
+name: Playwright + TestLab
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        working-directory: e2e/playwright
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Start TestLab execution
+        if: vars.TESTLAB_URL != ''
+        working-directory: e2e/playwright
+        env:
+          TESTLAB_PUSH: "1"
+          TESTLAB_URL: ${{ vars.TESTLAB_URL }}
+          TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+          TESTLAB_PROJECT_ID: ${{ vars.TESTLAB_PROJECT_ID }}
+          TESTLAB_SUITE_ID: ${{ vars.TESTLAB_SUITE_ID }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { appendFileSync } from "node:fs";
+          import {
+            startExecution,
+            validateExecutionIdForGithubEnv,
+          } from "@ovenbits/make-testlab-client";
+
+          const result = await startExecution({
+            suiteId: process.env.TESTLAB_SUITE_ID,
+            name: `Playwright - ${process.env.GITHUB_REF_NAME ?? "ci"}`,
+          });
+          if (!result.executionId) {
+            throw new Error("startExecution did not return executionId");
+          }
+          const id = validateExecutionIdForGithubEnv(result.executionId);
+          appendFileSync(process.env.GITHUB_ENV, `TESTLAB_EXECUTION_ID=${id}\n`);
+          EOF
+
+      - name: Run Playwright
+        working-directory: e2e/playwright
+        env:
+          TESTLAB_PUSH: ${{ vars.TESTLAB_URL != '' && '1' || '0' }}
+          TESTLAB_DEFER_COMPLETE: ${{ vars.TESTLAB_URL != '' && '1' || '0' }}
+          TESTLAB_URL: ${{ vars.TESTLAB_URL }}
+          TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+          TESTLAB_PROJECT_ID: ${{ vars.TESTLAB_PROJECT_ID }}
+          TESTLAB_EXECUTION_ID: ${{ env.TESTLAB_EXECUTION_ID }}
+          TESTLAB_EVIDENCE: ${{ vars.TESTLAB_URL != '' && '1' || '0' }}
+          TESTLAB_EVIDENCE_MODE: failures
+        run: npx playwright test
+
+      - name: Complete TestLab execution
+        if: always() && env.TESTLAB_EXECUTION_ID != ''
+        continue-on-error: true
+        working-directory: e2e/playwright
+        env:
+          TESTLAB_PUSH: "1"
+          TESTLAB_URL: ${{ vars.TESTLAB_URL }}
+          TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+          TESTLAB_PROJECT_ID: ${{ vars.TESTLAB_PROJECT_ID }}
+          TESTLAB_EXECUTION_ID: ${{ env.TESTLAB_EXECUTION_ID }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { completeExecution } from "@ovenbits/make-testlab-client";
+          await completeExecution(process.env.TESTLAB_EXECUTION_ID, {
+            forceReconcile: true,
+          });
+          EOF
+```
+
+If `TESTLAB_URL` is empty, tests still run; nothing is posted to TestLab.
+
+## 7. Report without Playwright (Client only)
+
+Maestro, JUnit, or a custom runner:
+
+```js
+import {
+  completeExecution,
+  pushResults,
+  startExecution,
+} from "@ovenbits/make-testlab-client";
+
+const { executionId } = await startExecution({
+  suiteId: process.env.TESTLAB_SUITE_ID,
+  name: "maestro-ci",
+});
+
+await pushResults({
+  executionId,
+  results: [
+    {
+      automationKey: "CA05",
+      status: "pass",
+      duration: 12_400,
+      runnerEmail: "persona@example.com",
+      runnerPersonaKey: "subscribed-user",
+    },
+    {
+      automationKey: "CA06",
+      status: "fail",
+      duration: 8_100,
+      errorMessage: "Timeout waiting for dashboard",
+    },
+  ],
+});
+
+await completeExecution(executionId, { forceReconcile: true });
+```
+
+Statuses: `pass` | `fail` | `skipped` | `blocked`. Optional evidence:
+`uploadAttachment`, `ingestCaseAttempt`, `uploadStepScreenshot` — see
+[Client](/cli-sdk/client).
+
+## 8. Evidence policy in CI
+
+```yaml
+TESTLAB_EVIDENCE: "1"
+TESTLAB_EVIDENCE_MODE: "failures" # screenshots; no success videos
+TESTLAB_EVIDENCE_DENY: "^(AUTH|SIGNUP)" # skip MFA / signup keys
+# TESTLAB_EVIDENCE_MODE: "critical"
+# TESTLAB_CRITICAL_SUCCESS_VIDEO_KEYS: "DEMO-01"
+```
+
+For a critical success video, also enable recording on that spec only:
+
+```ts
+test.use({ video: "on" });
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/guides/quickstart">
+    CLI login, init, import
+  </Card>
+  <Card title="Playwright SDK" icon="book" href="/cli-sdk/playwright">
+    Reporter, steps, screenshots, retries
+  </Card>
+  <Card
+    title="GitHub Actions"
+    icon="code-branch"
+    href="/ci-automations/github-actions"
+  >
+    Start / defer / complete details
+  </Card>
+  <Card
+    title="Portable Catalog"
+    icon="folder"
+    href="/concepts/portable-catalog"
+  >
+    automationKey JSON and suite membership
+  </Card>
+  <Card
+    title="Flutter web sample"
+    icon="github"
+    href="https://github.com/ovenbits/flutter-web-playwright"
+  >
+    Semantics helpers, catalog, reporter, and CI
+  </Card>
+</CardGroup>

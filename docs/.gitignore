@@ -1,9 +1,0 @@
-# Mintlify
-.mintlify
-
-# Build output
-_site/
-.cache/
-
-# Node modules (if Mintlify installs locally)
-node_modules/

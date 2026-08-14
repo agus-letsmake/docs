@@ -1,0 +1,181 @@
+---
+title: Client package
+description: "startExecution, pushResults, evidence uploads, and complete/reconcile"
+---
+
+Package: `@ovenbits/make-testlab-client`
+
+Shared reporting brain for runners: config, start/push/complete, evidence
+policy, attachment uploads, and error redaction. Dependency of the Playwright
+SDK; also usable directly from Maestro, Jest, or custom runners.
+
+Reporting env is written by **CLI init** (`npx testlab init` from the Playwright
+package), not by an in-app env snippet. See [Reporting env](/concepts/reporting-env).
+
+## Install
+
+```bash
+npm install @ovenbits/make-testlab-client
+```
+
+Authenticate `@ovenbits` against GitHub Packages the same way as the Playwright
+package.
+
+## Core flow
+
+```js
+const {
+  startExecution,
+  pushResults,
+  completeExecution,
+  validateExecutionIdForGithubEnv,
+} = require("@ovenbits/make-testlab-client");
+
+const started = await startExecution({
+  suiteId: process.env.TESTLAB_SUITE_ID,
+  name: "CI",
+});
+
+if (started.skipped || !started.executionId) {
+  throw new Error("TestLab startExecution did not return an executionId");
+}
+
+const executionId = validateExecutionIdForGithubEnv(started.executionId);
+// In GitHub Actions: append `TESTLAB_EXECUTION_ID=${executionId}` to GITHUB_ENV
+
+await pushResults({
+  executionId,
+  results: [
+    {
+      automationKey: "DEMO-01",
+      status: "pass",
+      duration: 1200,
+      runnerEmail: "runner@example.com", // optional
+      runnerPersonaKey: "persona-a", // optional
+    },
+  ],
+  // Prefer false in CI when TESTLAB_DEFER_COMPLETE=1 and cleanup owns complete
+  autoComplete: false,
+});
+
+await completeExecution(executionId, { forceReconcile: true });
+```
+
+When `TESTLAB_PUSH` is not `1`, Client helpers **no-op** without network (they
+return `{ skipped: true }` where applicable).
+
+## `startExecution`
+
+Creates an automated run. Payload fields:
+
+| Field                                            | Source                                                |
+| ------------------------------------------------ | ----------------------------------------------------- |
+| `suiteId`                                        | Input (suite that owns catalog cases)                 |
+| `name`                                           | Input (run display name)                              |
+| `version`                                        | Input or `TESTLAB_VERSION`                            |
+| `environment`                                    | Input or `TESTLAB_ENV` (default `ci`)                 |
+| `gitSha` / `branch` / `buildNumber` / `ciRunUrl` | Input or GitHub Actions env                           |
+| `batchId` / `batchItemId`                        | Input or `TESTLAB_BATCH_ID` / `TESTLAB_BATCH_ITEM_ID` |
+| `runnerContext`                                  | Optional structured context                           |
+
+Returns `{ skipped: true }` when push is disabled, or
+`{ skipped: false, executionId }` (may be `null` on HTTP failure).
+
+Use `validateExecutionIdForGithubEnv(executionId)` before writing to
+`GITHUB_ENV` so unsafe characters cannot break the Actions file format.
+
+## `pushResults`
+
+Posts one or more automated results to an open execution.
+
+```ts
+type AutomatedResultPayload = {
+  automationKey: string;
+  status: string; // pass | fail | skipped | blocked (and runner-specific values)
+  duration?: number;
+  errorMessage?: string | null; // redacted by the Client before send
+  runnerEmail?: string;
+  runnerPersonaKey?: string;
+  attachments?: unknown[];
+};
+```
+
+Options:
+
+- `executionId` — required
+- `results` — array of payloads
+- `autoComplete` — when `true`, ask the API to complete after this push (only
+  succeeds when suite `todo` reaches zero)
+
+HTTP failures return `null`. With `TESTLAB_PUSH_REQUIRED=1`, underlying fetch
+helpers can fail the process.
+
+The Playwright reporter calls this on each final test attempt — you normally
+do **not** call it from specs.
+
+## `completeExecution`
+
+Closes an execution. Pass `{ forceReconcile: true }` from CI orphan/cleanup
+steps so leftover `todo` rows are reconciled even if the run is not stale yet.
+
+## Evidence helpers
+
+Used by the Playwright reporter; available for custom runners too:
+
+| Helper                 | Purpose                                                             |
+| ---------------------- | ------------------------------------------------------------------- |
+| `uploadAttachment`     | Result-row file (`POST /api/attachments/upload`)                    |
+| `ingestCaseAttempt`    | Observed steps walkthrough (`POST /api/evidence/v1/ingest`)         |
+| `uploadStepScreenshot` | Per-step artifact (`POST /api/evidence/v1/steps/:stepId/artifacts`) |
+
+Policy helpers (env-driven, no product-prefix heuristics):
+
+| Helper                          | Purpose                                          |
+| ------------------------------- | ------------------------------------------------ |
+| `isTestLabPushEnabled`          | `TESTLAB_PUSH === "1"`                           |
+| `isTestLabEvidenceEnabled`      | Push on and not opted out                        |
+| `isTestLabDeferCompleteEnabled` | `TESTLAB_DEFER_COMPLETE === "1"`                 |
+| `readTestLabEvidencePolicy`     | Mode, retention, allow/deny, critical video keys |
+| `shouldUploadFailureEvidence`   | Gate failure screenshots                         |
+| `shouldUploadResultScreenshot`  | Gate pass/fail result screenshots                |
+| `shouldUploadSuccessVideo`      | Gate success videos (`critical` / `all` modes)   |
+| `matchesEvidenceKeyPolicy`      | Allow/deny regex evaluation                      |
+
+Details: [Evidence](/concepts/evidence).
+
+## Config and generic HTTP
+
+| Helper                            | Purpose                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `readTestLabConfig`               | Reads `TESTLAB_URL` / `TESTLAB_API_KEY` / `TESTLAB_PROJECT_ID` (https required except localhost) |
+| `testLabFetch`                    | Authenticated JSON request (`X-API-Key` + `X-Project-Id`)                                        |
+| `validateExecutionIdForGithubEnv` | Rejects execution ids that would break `GITHUB_ENV`                                              |
+
+Use `testLabFetch` for catalog upserts (`/api/test-cases`, suite membership) —
+the Client does not ship a dedicated sync CLI.
+
+## Non-Playwright runners (Maestro, JUnit, custom)
+
+Same lifecycle, no reporter:
+
+1. `startExecution({ suiteId, name })`
+2. For each finished case: `pushResults` with `automationKey` + `status`
+   (optional `runnerEmail` / `runnerPersonaKey`)
+3. Optional `uploadAttachment` / `ingestCaseAttempt` / `uploadStepScreenshot`
+4. `completeExecution(id, { forceReconcile: true })` from CI cleanup when
+   `TESTLAB_DEFER_COMPLETE=1`
+
+Map runner titles to catalog keys in your own mapping file. Do not invent
+`testCaseId` when the case already has an `automationKey`.
+
+## Redaction
+
+`sanitizeErrorMessageForTestLab` strips tokens, passwords, and TestLab API keys
+(`tlk_…`) from error strings before push. Prefer letting the Client sanitize
+rather than shipping raw auth failures.
+
+## Related
+
+- [Playwright SDK](/cli-sdk/playwright)
+- [Reporting env](/concepts/reporting-env)
+- [Automated results API](/api-reference/automated-results/push)

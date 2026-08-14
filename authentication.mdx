@@ -1,0 +1,69 @@
+---
+title: Authentication
+description: "API keys, project scope, and session auth"
+---
+
+## Overview
+
+TestLab supports two authentication methods:
+
+1. **API Key** — CI/CD, SDKs, scripts (`X-API-Key`)
+2. **Bearer Token** — user sessions (Firebase ID token)
+
+Machine clients should also send **`X-Project-Id`** (project id or slug).
+
+## API key (recommended for CI)
+
+Create keys under **Project → API Keys** (or via CLI init). The full key is shown once.
+
+```bash
+curl -X GET https://testlab.letsmake.com/api/test-cases \
+  -H "X-API-Key: tlk_your_api_key_here" \
+  -H "X-Project-Id: your-project-id"
+```
+
+<img src="/images/screenshots/settings-keys.png" alt="Project API Keys settings with CI usage example" />
+
+<Warning>
+  Never commit API keys. Prefer repository secrets and CLI init for local `.env`.
+</Warning>
+
+### Key format
+
+- Prefix: `tlk_`
+- Example shape: `tlk_…` (base64url material after the prefix)
+
+## Cursor MCP
+
+Cursor can read project data over a hosted MCP URL with the same `X-API-Key` and
+`X-Project-Id` headers. Setup: [Cursor MCP](/guides/cursor-mcp).
+
+## Bearer token (user sessions)
+
+```bash
+Authorization: Bearer <firebase-id-token>
+```
+
+Used by the web app after Google sign-in. Not the preferred path for CI.
+
+## CLI credentials vs CI keys
+
+| Credential | Created by | Stored where | Used for |
+| --- | --- | --- | --- |
+| User CLI session | `testlab login` | User-level CLI store | `testlab init` |
+| CI API key | `testlab init` / UI | `TESTLAB_API_KEY` in env | Reporters / curl |
+
+See [CLI login + init](/cli-sdk/cli-login-init) and [Reporting env](/concepts/reporting-env).
+
+## Base URL
+
+<CodeGroup>
+```bash Production
+https://testlab.letsmake.com/api
+```
+
+```bash Development
+http://localhost:3000/api
+```
+
+</CodeGroup>

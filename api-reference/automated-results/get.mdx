@@ -1,0 +1,249 @@
+---
+title: "Get Execution Results"
+api: "GET /api/automated-results"
+description: "Retrieve results for a specific execution (useful for CI/CD to check test status)"
+---
+
+Fetch the complete results and status of a test execution. This is useful for CI/CD pipelines to check if their tests passed or failed.
+
+## Query Parameters
+
+<ParamField query="executionId" type="string" required>
+  The execution ID to retrieve results for
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://testlab.letsmake.com/api/automated-results?executionId=exec-abc123" \
+  -H "X-API-Key: tlk_your_api_key_here"
+```
+
+```javascript JavaScript
+const executionId = 'exec-abc123';
+const response = await fetch(
+  `https://testlab.letsmake.com/api/automated-results?executionId=${executionId}`,
+  {
+    headers: {
+      'X-API-Key': process.env.TESTLAB_API_KEY
+    }
+  }
+);
+
+const data = await response.json();
+
+// Check if any tests failed
+if (data.summary.fail > 0) {
+  console.error(`${data.summary.fail} tests failed!`);
+  process.exit(1);
+}
+
+console.log(`All tests passed! (${data.summary.pass}/${data.summary.total})`);
+```
+
+```python Python
+import requests
+import sys
+
+execution_id = "exec-abc123"
+url = f"https://testlab.letsmake.com/api/automated-results?executionId={execution_id}"
+headers = {"X-API-Key": os.environ["TESTLAB_API_KEY"]}
+
+response = requests.get(url, headers=headers)
+data = response.json()
+
+# Check if any tests failed
+if data["summary"]["fail"] > 0:
+    print(f"{data['summary']['fail']} tests failed!")
+    sys.exit(1)
+
+print(f"All tests passed! ({data['summary']['pass']}/{data['summary']['total']})")
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "exec-abc123",
+  "name": "CI Run - Sprint 5",
+  "version": "v1.2.3",
+  "environment": "staging",
+  "status": "completed",
+  "suiteName": "Authentication Test Suite",
+  "executedAt": "2024-01-20T10:00:00Z",
+  "completedAt": "2024-01-20T10:15:00Z",
+  "summary": {
+    "total": 10,
+    "pass": 8,
+    "fail": 2,
+    "skipped": 0,
+    "blocked": 0,
+    "todo": 0,
+    "automated": 10,
+    "manual": 0
+  },
+  "results": [
+    {
+      "testCaseId": "tc-001-login-valid",
+      "testCaseTitle": "User can login with valid credentials",
+      "status": "pass",
+      "source": "automated",
+      "duration": 234,
+      "errorMessage": null,
+      "notes": "Jest: Authentication tc-001-login-valid: User can login with valid credentials",
+      "executedAt": "2024-01-20T10:00:00Z"
+    },
+    {
+      "testCaseId": "tc-005-add-to-cart",
+      "testCaseTitle": "Add product to shopping cart",
+      "status": "fail",
+      "source": "automated",
+      "duration": 890,
+      "errorMessage": "Expected cart count to be 1, but got 0\n    at Cart.test.js:15:38",
+      "notes": "Jest: Shopping Cart [tc-005-add-to-cart] Add product to shopping cart",
+      "executedAt": "2024-01-20T10:01:00Z"
+    }
+  ]
+}
+```
+
+```json 400 Bad Request
+{
+  "error": "executionId query parameter is required"
+}
+```
+
+```json 404 Not Found
+{
+  "error": "Execution not found"
+}
+```
+
+</ResponseExample>
+
+## Response Fields
+
+<ResponseField name="id" type="string">
+  Execution ID
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Execution name
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Build/release version
+</ResponseField>
+
+<ResponseField name="environment" type="string">
+  Environment name
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Execution status (`in_progress` or `completed`)
+</ResponseField>
+
+<ResponseField name="suiteName" type="string">
+  Name of the test suite
+</ResponseField>
+
+<ResponseField name="executedAt" type="string">
+  ISO 8601 timestamp of when execution started
+</ResponseField>
+
+<ResponseField name="completedAt" type="string">
+  ISO 8601 timestamp of when execution completed (null if still in progress)
+</ResponseField>
+
+<ResponseField name="summary" type="object">
+  Summary statistics
+  <Expandable title="Properties">
+    <ResponseField name="total" type="integer">
+      Total test cases
+    </ResponseField>
+    <ResponseField name="pass" type="integer">
+      Passed tests
+    </ResponseField>
+    <ResponseField name="fail" type="integer">
+      Failed tests
+    </ResponseField>
+    <ResponseField name="skipped" type="integer">
+      Skipped tests
+    </ResponseField>
+    <ResponseField name="blocked" type="integer">
+      Blocked tests
+    </ResponseField>
+    <ResponseField name="todo" type="integer">
+      Not executed
+    </ResponseField>
+    <ResponseField name="automated" type="integer">
+      Automated test results
+    </ResponseField>
+    <ResponseField name="manual" type="integer">
+      Manual test results
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Individual test results
+  <Expandable title="Properties">
+    <ResponseField name="testCaseId" type="string">
+      Test case ID
+    </ResponseField>
+    <ResponseField name="testCaseTitle" type="string">
+      Test case title
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Result status
+    </ResponseField>
+    <ResponseField name="source" type="string">
+      `manual` or `automated`
+    </ResponseField>
+    <ResponseField name="duration" type="integer">
+      Duration in milliseconds
+    </ResponseField>
+    <ResponseField name="errorMessage" type="string">
+      Error details (null if passed)
+    </ResponseField>
+    <ResponseField name="notes" type="string">
+      Additional notes
+    </ResponseField>
+    <ResponseField name="executedAt" type="string">
+      When this test was executed
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Use in CI/CD
+
+This endpoint is particularly useful for:
+
+### Failing Builds on Test Failures
+
+```bash GitHub Actions
+- name: Run tests and push to TestLab
+  run: |
+    npm test -- --json --outputFile=results.json
+    EXECUTION_ID=$(node scripts/jest-to-testlab.js results.json | grep -o 'exec-[a-z0-9]*')
+    echo "execution_id=$EXECUTION_ID" >> $GITHUB_OUTPUT
+  id: tests
+
+- name: Check test results
+  run: |
+    curl -X GET "https://testlab.letsmake.com/api/automated-results?executionId=${{ steps.tests.outputs.execution_id }}" \
+      -H "X-API-Key: ${{ secrets.TESTLAB_API_KEY }}" \
+      > test-results.json
+    
+    FAILURES=$(jq '.summary.fail' test-results.json)
+    if [ "$FAILURES" -gt 0 ]; then
+      echo "::error::$FAILURES tests failed"
+      exit 1
+    fi
+```
+
+### Slack
+
+Do not post from CI for the live plan card. TestLab updates Slack itself when
+**Live run card** is enabled on the project. See
+[Live Slack run cards](/guides/live-slack-run-cards).

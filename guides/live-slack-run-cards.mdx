@@ -1,0 +1,77 @@
+---
+title: Live Slack run cards
+description: "Post one updating Slack plan per automated TestLab execution"
+---
+
+TestLab posts **one Slack plan card per automated run**. The card is created when
+ingest starts, then updated as results arrive and when the run completes. Channel
+choice is per project. CI only reports results; it does not talk to Slack.
+
+This is not the end-of-job JUnit Slack summary some pipelines still post. Keep
+those jobs if you want a final dump. The live card is the in-progress checklist.
+
+## What you get
+
+- One card per automated execution (Playwright and Maestro in the same project
+  each get their own card)
+- Checklist of cases while the run is in progress (up to 25 tasks; larger runs
+  switch to a summary)
+- Final title with passed/failed counts
+- Footer links: **View in TestLab** and **GitHub run** when those URLs exist
+- On complete, a thread reply: `Playwright run ready for agent review` or
+  `Maestro run ready for agent review` when the runner can be detected
+
+Manual (non-automated) executions never post.
+
+## Enable for a project
+
+You need permission to manage the project (same as other settings writes).
+
+1. Open **Project → General**.
+2. In **Notifications**, turn on **Live run card**.
+3. Invite the TestLab Slack bot to the destination channel.
+4. Paste the **Slack channel ID** (Channel details → Copy ID). IDs start with
+   `C`, `G`, or `D` — not `#channel-name`.
+5. **Save**.
+6. Click **Send test message**. You should see a short confirmation in that
+   channel (not a plan card). Then run an automated suite to get a real card.
+
+If you see a banner that `SLACK_BOT_TOKEN` is missing, settings still save, but
+ingest skips Slack until whoever hosts this TestLab instance sets the bot token.
+The token never appears in the browser or in CI.
+
+## What CI must do
+
+Nothing Slack-specific. Keep the usual ingest path:
+
+1. [Start an execution](/ci-automations/github-actions)
+2. Push automated results
+3. Complete / reconcile
+
+Do **not** set `TESTLAB_SLACK_LIVE`, `SLACK_CHANNEL_ID`, or a Slack bot token in
+the consumer pipeline for live cards.
+
+### Subset runs
+
+If `/start` includes `automationKeys`, the card lists only those suite cases.
+Omit the field to seed (and show) the full suite. Unknown or out-of-suite keys
+are rejected.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| No card at all | Live run card is on, channel ID is saved, bot is in the channel, run is **automated**, instance has `SLACK_BOT_TOKEN` |
+| Test message disabled | Save settings first; token banner must be gone |
+| Channel ID rejected | Use the copy-ID value (`C…` / `G…` / `D…`), not `#name` |
+| Card lists the wrong cases | `/start` `automationKeys` vs full-suite start |
+| Final counts never appear | Complete/reconcile still ran (`completeExecution` / `forceReconcile`) |
+
+Failed Slack calls do not fail ingest. The run in TestLab is still the source of
+truth.
+
+## Related
+
+- [Project settings](/web-app/project-settings)
+- [GitHub Actions reporting](/ci-automations/github-actions)
+- [CI/CD integration](/guides/ci-cd-integration)

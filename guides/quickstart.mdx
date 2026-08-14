@@ -1,0 +1,66 @@
+---
+title: Quick Start Guide
+description: "Report results in minutes with CLI + Playwright"
+---
+
+## Prerequisites
+
+- Access to a TestLab instance
+- Node 20+
+- A Playwright project (or use the Client package directly)
+
+## Step 1: CLI setup
+
+```bash
+npm install @ovenbits/make-testlab-playwright @ovenbits/make-testlab-client
+npx testlab login
+npx testlab init
+```
+
+This writes `TESTLAB_*` reporting env. Details: [CLI login + init](/cli-sdk/cli-login-init).
+
+## Step 2: Import cases
+
+In the web app, open **Cases → Import / Export** and load a
+[Portable Catalog](/concepts/portable-catalog) with automation keys.
+
+## Step 3: Register the reporter
+
+```ts
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  use: { screenshot: "on" },
+  reporter: [["list"], ["@ovenbits/make-testlab-playwright"]],
+});
+```
+
+## Step 4: Start an execution, then push
+
+The reporter needs `TESTLAB_EXECUTION_ID` from Client `startExecution`. A bare
+`npx playwright test` with only `TESTLAB_PUSH=1` will not create a run.
+
+```bash
+export TESTLAB_PUSH=1
+# After startExecution writes TESTLAB_EXECUTION_ID:
+npx playwright test
+```
+
+In CI, follow [GitHub Actions reporting](/ci-automations/github-actions)
+(`start` → tests with `TESTLAB_DEFER_COMPLETE=1` → `completeExecution`).
+
+Review the run under **Runs** in the web app.
+
+## Copy-paste cookbook
+
+Full examples (fixture, `runObservedStep`, local start/complete script, GitHub
+Actions workflow, Client-only push): [Code examples](/guides/examples).
+
+Flutter **web** working sample (semantics helpers + catalog + reporter + CI):
+[ovenbits/flutter-web-playwright](https://github.com/ovenbits/flutter-web-playwright).
+
+## Prefer API-only?
+
+See [Authentication](/authentication) and the
+[API reference](/api-reference/test-cases/list). Older curl-only recipes remain
+in [Examples](/guides/examples).

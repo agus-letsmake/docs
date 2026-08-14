@@ -1,0 +1,20 @@
+---
+title: Execution (Run)
+description: "A single run of cases — shown as Runs in the web app"
+---
+
+An **Execution** is one run of cases. In the web app the room is labeled
+**Runs**. Executions can be manual or automated (`kind`), and carry CI metadata
+(branch, SHA, CI URL) when reported from pipelines.
+
+SDKs typically:
+
+1. `startExecution` → receive `executionId`
+2. `pushResults` / evidence uploads while tests run
+3. `completeExecution` (or CI cleanup with reconcile)
+
+## Related
+
+- [Runs UI](/web-app/runs)
+- [Compare](/web-app/compare)
+- [API: executions](/api-reference/executions/list)

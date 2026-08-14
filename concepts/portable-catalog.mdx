@@ -1,0 +1,66 @@
+---
+title: Portable Catalog
+description: "JSON shape for bulk case import with automation keys"
+---
+
+A **Portable Catalog** is the JSON shape for bulk case (and optional suite)
+import. Every case requires an `automationKey`. The Playwright reporter and
+Client `pushResults` match results to cases by that key — not by Playwright
+title alone, and not by opaque `testCaseId` in CI.
+
+Import happens in the **Cases** UI (**Import / Export**), or via
+`POST /api/import`. CLI init does **not** import a catalog.
+
+<Warning>
+  Do not invent ad-hoc import JSON without automation keys. Do not refer to this
+  as a "Bootstrap catalog".
+</Warning>
+
+## Accepted shapes
+
+- An array of cases, or
+- `{ "testCases": [...], "testSuites": [...] }`
+
+Minimal case:
+
+```json
+[
+  {
+    "automationKey": "DEMO-01",
+    "title": "DEMO-01 - Navigates to home",
+    "epicOrFeature": "playwright/demo",
+    "sourceFile": "home.spec.ts",
+    "steps": [
+      {
+        "id": "step-1",
+        "description": "Navigate to home",
+        "expectedResult": "Home heading visible"
+      }
+    ]
+  }
+]
+```
+
+Optional fields commonly used by product catalogs: `epicOrFeature`,
+`sourceFile`, `steps[]` (`id`, `description`, `expectedResult`).
+
+## Suite membership
+
+`startExecution({ suiteId })` seeds a `todo` row for **every** case on that
+suite. Auto-complete only finishes when `todo` reaches zero.
+
+- Keep the suite equal to the catalog this job runs
+- Extra suite rows that never report stay `todo` and **block** `autoComplete`
+- The Playwright reporter reports leftover expected keys as `blocked` at
+  `onEnd`, but keys that were never in the Playwright run still need a Client
+  push or a suite membership replace
+
+Product CI often upserts cases by `automationKey` then **replaces** suite
+membership with the catalog case ids (Playwright and Maestro suites are
+separate). Preview with a dry-run before a live upsert.
+
+## Related
+
+- [Cases UI](/web-app/cases)
+- [API import](/api-reference/data/import)
+- [Playwright SDK](/cli-sdk/playwright)

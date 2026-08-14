@@ -1,0 +1,62 @@
+---
+title: Introduction
+description: "What TestLab is and how to become productive quickly"
+---
+
+## Welcome
+
+TestLab is a test management product for Make engineers and automation authors.
+You manage **cases** and **suites** in the web app, run **executions** (Runs),
+review **evidence**, and push automated results from CI via the **Client** and
+**Playwright** packages.
+
+### Who it is for
+
+| Role                           | Start here                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------ |
+| Make engineer adopting TestLab | [CLI login + init](/cli-sdk/cli-login-init) → [Cases](/web-app/cases)            |
+| CI / automation author         | [Reporting env](/concepts/reporting-env) → [Playwright SDK](/cli-sdk/playwright) |
+| Agent / automation             | [Cursor MCP](/guides/cursor-mcp) → [API authentication](/authentication)         |
+| Slack / run visibility         | [Live Slack run cards](/guides/live-slack-run-cards)                                  |
+
+## Ten-minute path
+
+<Steps>
+  <Step title="Sign in">
+    Open TestLab and sign in with your `@letsmake.com` Google account. See
+    [Login](/web-app/login).
+  </Step>
+  <Step title="CLI setup">
+    Install `@ovenbits/make-testlab-playwright`, then run `npx testlab login`
+    and `npx testlab init` to write `TESTLAB_*` reporting env. See [CLI login +
+    init](/cli-sdk/cli-login-init).
+  </Step>
+  <Step title="Import cases">
+    Use **Cases → Import / Export** to load a [Portable
+    Catalog](/concepts/portable-catalog) (automation keys required).
+  </Step>
+  <Step title="Report results">
+    Register the Playwright reporter, start an execution, then run tests with
+    `TESTLAB_PUSH=1`. Review outcomes under **Runs**. See [Quick
+    start](/guides/quickstart).
+  </Step>
+</Steps>
+
+## What not to use
+
+<Warning>
+  The in-app **Bootstrap** wizard is retired (`/bootstrap` redirects home). Do
+  not use the old package name `make-testlab-playwright-reporter` — use
+  `@ovenbits/make-testlab-playwright`.
+</Warning>
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Concepts" icon="book" href="/concepts/overview">
+    Shared language for Project, Case, Suite, Execution, Evidence
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    API keys, project scope, and session auth
+  </Card>
+</CardGroup>

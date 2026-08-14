@@ -36,133 +36,130 @@
   "tabs": [
     {
       "name": "Docs",
-      "url": "docs"
+      "url": "introduction"
     },
     {
       "name": "API Reference",
-      "url": "docs/api-reference"
+      "url": "api-reference"
     },
     {
       "name": "Guides",
-      "url": "docs/guides"
+      "url": "guides"
     }
   ],
   "navigation": [
     {
       "group": "Get started",
-      "pages": ["docs/introduction", "docs/authentication"]
+      "pages": ["introduction", "authentication"]
     },
     {
       "group": "Concepts",
       "pages": [
-        "docs/concepts/overview",
-        "docs/concepts/project",
-        "docs/concepts/case",
-        "docs/concepts/suite",
-        "docs/concepts/execution",
-        "docs/concepts/evidence",
-        "docs/concepts/api-key",
-        "docs/concepts/portable-catalog",
-        "docs/concepts/reporting-env"
+        "concepts/overview",
+        "concepts/project",
+        "concepts/case",
+        "concepts/suite",
+        "concepts/execution",
+        "concepts/evidence",
+        "concepts/api-key",
+        "concepts/portable-catalog",
+        "concepts/reporting-env"
       ]
     },
     {
       "group": "Web app",
       "pages": [
-        "docs/web-app/overview",
-        "docs/web-app/login",
-        "docs/web-app/cases",
-        "docs/web-app/suites",
-        "docs/web-app/runs",
-        "docs/web-app/compare",
-        "docs/web-app/project-settings",
-        "docs/web-app/cli-device-login"
+        "web-app/overview",
+        "web-app/login",
+        "web-app/cases",
+        "web-app/suites",
+        "web-app/runs",
+        "web-app/compare",
+        "web-app/project-settings",
+        "web-app/cli-device-login"
       ]
     },
     {
       "group": "CLI & SDK",
       "pages": [
-        "docs/cli-sdk/overview",
-        "docs/cli-sdk/cli-login-init",
-        "docs/cli-sdk/playwright",
-        "docs/cli-sdk/client"
+        "cli-sdk/overview",
+        "cli-sdk/cli-login-init",
+        "cli-sdk/playwright",
+        "cli-sdk/client"
       ]
     },
     {
       "group": "CI & automations",
       "pages": [
-        "docs/ci-automations/overview",
-        "docs/ci-automations/github-actions",
-        "docs/ci-automations/automations"
+        "ci-automations/overview",
+        "ci-automations/github-actions",
+        "ci-automations/automations"
       ]
     },
     {
       "group": "Test Cases",
       "pages": [
-        "docs/api-reference/test-cases/list",
-        "docs/api-reference/test-cases/create",
-        "docs/api-reference/test-cases/get",
-        "docs/api-reference/test-cases/update",
-        "docs/api-reference/test-cases/delete"
+        "api-reference/test-cases/list",
+        "api-reference/test-cases/create",
+        "api-reference/test-cases/get",
+        "api-reference/test-cases/update",
+        "api-reference/test-cases/delete"
       ]
     },
     {
       "group": "Test Suites",
       "pages": [
-        "docs/api-reference/test-suites/list",
-        "docs/api-reference/test-suites/create",
-        "docs/api-reference/test-suites/get",
-        "docs/api-reference/test-suites/update",
-        "docs/api-reference/test-suites/delete",
-        "docs/api-reference/test-suites/test-cases"
+        "api-reference/test-suites/list",
+        "api-reference/test-suites/create",
+        "api-reference/test-suites/get",
+        "api-reference/test-suites/update",
+        "api-reference/test-suites/delete",
+        "api-reference/test-suites/test-cases"
       ]
     },
     {
       "group": "Executions",
       "pages": [
-        "docs/api-reference/executions/list",
-        "docs/api-reference/executions/create",
-        "docs/api-reference/executions/get",
-        "docs/api-reference/executions/update",
-        "docs/api-reference/executions/delete",
-        "docs/api-reference/executions/results"
+        "api-reference/executions/list",
+        "api-reference/executions/create",
+        "api-reference/executions/get",
+        "api-reference/executions/update",
+        "api-reference/executions/delete",
+        "api-reference/executions/results"
       ]
     },
     {
       "group": "Automated Results",
       "pages": [
-        "docs/api-reference/automated-results/push",
-        "docs/api-reference/automated-results/get"
+        "api-reference/automated-results/push",
+        "api-reference/automated-results/get"
       ]
     },
     {
       "group": "API Keys",
       "pages": [
-        "docs/api-reference/api-keys/list",
-        "docs/api-reference/api-keys/create",
-        "docs/api-reference/api-keys/update",
-        "docs/api-reference/api-keys/delete"
+        "api-reference/api-keys/list",
+        "api-reference/api-keys/create",
+        "api-reference/api-keys/update",
+        "api-reference/api-keys/delete"
       ]
     },
     {
       "group": "Data Management",
-      "pages": [
-        "docs/api-reference/data/import",
-        "docs/api-reference/data/export"
-      ]
+      "pages": ["api-reference/data/import", "api-reference/data/export"]
     },
     {
       "group": "Reports",
-      "pages": ["docs/api-reference/reports/pdf"]
+      "pages": ["api-reference/reports/pdf"]
     },
     {
       "group": "Guides",
       "pages": [
-        "docs/guides/quickstart",
-        "docs/guides/cursor-mcp",
-        "docs/guides/live-slack-run-cards",
-        "docs/guides/ci-cd-integration",
-        "docs/guides/examples"
+        "guides/quickstart",
+        "guides/cursor-mcp",
+        "guides/live-slack-run-cards",
+        "guides/ci-cd-integration",
+        "guides/examples"
       ]
     }
   ],
@@ -176,5 +173,11 @@
       "mode": "simple"
     }
   },
-  "openapi": "docs/openapi.yaml"
+  "openapi": "openapi.yaml",
+  "redirects": [
+    {
+      "source": "/docs/docs/:path*",
+      "destination": "/:path*"
+    }
+  ]
 }

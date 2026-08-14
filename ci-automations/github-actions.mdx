@@ -1,0 +1,134 @@
+---
+title: GitHub Actions reporting
+description: "startExecution → Playwright reporter → completeExecution"
+---
+
+## Recommended CI sequence
+
+1. Install `@ovenbits/make-testlab-playwright` + `@ovenbits/make-testlab-client`
+2. When TestLab is configured, call Client `startExecution` and export
+   `TESTLAB_EXECUTION_ID` to `GITHUB_ENV` (use `validateExecutionIdForGithubEnv`)
+3. Run Playwright with:
+   - `TESTLAB_PUSH=1`
+   - `TESTLAB_DEFER_COMPLETE=1` (cleanup owns complete)
+   - Evidence vars as needed (`TESTLAB_EVIDENCE`, mode, allow/deny, critical video keys)
+4. Always-run cleanup: `completeExecution(executionId, { forceReconcile: true })`
+
+## Minimal job fragment
+
+```yaml
+- name: Start TestLab execution
+  if: vars.TESTLAB_URL != ''
+  working-directory: e2e/playwright
+  env:
+    TESTLAB_PUSH: "1"
+    TESTLAB_URL: ${{ vars.TESTLAB_URL }}
+    TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+    TESTLAB_PROJECT_ID: ${{ vars.TESTLAB_PROJECT_ID }}
+    TESTLAB_SUITE_ID: ${{ vars.TESTLAB_PLAYWRIGHT_SUITE_ID }}
+    # Optional Automations linkage (workflow_dispatch inputs):
+    # TESTLAB_BATCH_ID / TESTLAB_BATCH_ITEM_ID
+  run: |
+    node --input-type=module <<'EOF'
+    import { appendFileSync } from "node:fs";
+    import {
+      startExecution,
+      validateExecutionIdForGithubEnv,
+    } from "@ovenbits/make-testlab-client";
+
+    const result = await startExecution({
+      suiteId: process.env.TESTLAB_SUITE_ID,
+      name: `Playwright - ${process.env.GITHUB_REF_NAME ?? "ci"}`,
+    });
+    if (!result.executionId) {
+      throw new Error("startExecution did not return executionId");
+    }
+    const executionId = validateExecutionIdForGithubEnv(result.executionId);
+    appendFileSync(process.env.GITHUB_ENV, `TESTLAB_EXECUTION_ID=${executionId}\n`);
+    EOF
+
+- name: Run Playwright
+  working-directory: e2e/playwright
+  env:
+    TESTLAB_PUSH: ${{ vars.TESTLAB_URL != '' && '1' || '0' }}
+    TESTLAB_DEFER_COMPLETE: ${{ vars.TESTLAB_URL != '' && '1' || '0' }}
+    TESTLAB_URL: ${{ vars.TESTLAB_URL }}
+    TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+    TESTLAB_PROJECT_ID: ${{ vars.TESTLAB_PROJECT_ID }}
+    TESTLAB_EXECUTION_ID: ${{ env.TESTLAB_EXECUTION_ID }}
+    TESTLAB_EVIDENCE: ${{ vars.TESTLAB_URL != '' && '1' || '0' }}
+    TESTLAB_EVIDENCE_MODE: ${{ vars.TESTLAB_EVIDENCE_MODE != '' && vars.TESTLAB_EVIDENCE_MODE || 'failures' }}
+    TESTLAB_EVIDENCE_DENY: ${{ vars.TESTLAB_EVIDENCE_DENY }}
+    TESTLAB_CRITICAL_SUCCESS_VIDEO_KEYS: ${{ vars.TESTLAB_CRITICAL_SUCCESS_VIDEO_KEYS }}
+    TESTLAB_EVIDENCE_RETENTION_DAYS: ${{ vars.TESTLAB_EVIDENCE_RETENTION_DAYS }}
+  run: npx playwright test
+
+- name: Complete TestLab execution
+  if: always() && env.TESTLAB_EXECUTION_ID != ''
+  continue-on-error: true
+  working-directory: e2e/playwright
+  env:
+    TESTLAB_PUSH: "1"
+    TESTLAB_URL: ${{ vars.TESTLAB_URL }}
+    TESTLAB_API_KEY: ${{ secrets.TESTLAB_API_KEY }}
+    TESTLAB_PROJECT_ID: ${{ vars.TESTLAB_PROJECT_ID }}
+    TESTLAB_EXECUTION_ID: ${{ env.TESTLAB_EXECUTION_ID }}
+  run: |
+    node --input-type=module <<'EOF'
+    import { completeExecution } from "@ovenbits/make-testlab-client";
+    await completeExecution(process.env.TESTLAB_EXECUTION_ID, {
+      forceReconcile: true,
+    });
+    EOF
+```
+
+## Secrets and variables
+
+| Name                                 | Typical store  | Purpose                    |
+| ------------------------------------ | -------------- | -------------------------- |
+| `TESTLAB_URL`                        | repo variable  | Base URL                   |
+| `TESTLAB_API_KEY`                    | repo secret    | API key                    |
+| `TESTLAB_PROJECT_ID`                 | repo variable  | Project id/slug            |
+| Suite id                             | repo variable  | Passed to `startExecution` |
+| Evidence mode / deny / critical keys | repo variables | Optional policy overrides  |
+
+Gate the whole path on `vars.TESTLAB_URL != ''` so forks / unset envs keep local
+HTML/JUnit artifacts without TestLab HTTP.
+
+## Playwright config checklist
+
+- Register `@ovenbits/make-testlab-playwright` when `TESTLAB_PUSH=1`
+- Set `use.screenshot` appropriately for evidence fallbacks
+- Put automation keys in tags or titles (or custom `resolveAutomationKey`)
+- Use `runObservedStep` for product walkthrough steps
+- Annotate `testlab:runnerEmail` / `testlab:runnerPersonaKey` when account-backed
+- Opt sensitive keys out via `TESTLAB_EVIDENCE_DENY` rather than uploading MFA UI
+- Keep suite membership equal to the catalog this job runs (`todo` rows block complete)
+
+## Catalog before live CI
+
+Import or upsert cases with matching `automationKey` values, then attach them
+to the suite id you pass to `startExecution`. Preview membership changes with a
+dry-run. See [Portable Catalog](/concepts/portable-catalog).
+
+## Automations batches
+
+`workflow_dispatch` can pass `TESTLAB_BATCH_ID` and `TESTLAB_BATCH_ITEM_ID` into
+`startExecution` so the run links to an Automations batch item. See
+[Automations](/ci-automations/automations).
+
+## Live Slack
+
+Automated ingest already drives live plan cards when the project has **Live run
+card** enabled. Do not add Slack tokens to this workflow. Setup:
+[Live Slack run cards](/guides/live-slack-run-cards).
+
+## Related
+
+- [Live Slack run cards](/guides/live-slack-run-cards)
+- [Copy-paste examples](/guides/examples) — test, local wrapper, full workflow
+- [Playwright SDK](/cli-sdk/playwright)
+- [Client package](/cli-sdk/client)
+- [Full CI/CD guide](/guides/ci-cd-integration)
+- [Reporting env](/concepts/reporting-env)
+- [Evidence](/concepts/evidence)
